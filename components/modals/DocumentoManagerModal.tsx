@@ -141,6 +141,18 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
             return;
         }
 
+        // Validação de validade do documento
+        if (formData.temValidade) {
+            if (!formData.dataInicio) {
+                toast.error("Data de Início é obrigatória quando o documento tem validade.");
+                return;
+            }
+            if (!formData.validadeMeses && !formData.dataFim) {
+                toast.error("Preencha a Validade (meses) ou a Data Final.");
+                return;
+            }
+        }
+
         setIsSaving(true);
 
         try {
@@ -232,10 +244,17 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
                         {formData.temValidade && (
                             <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <InputField label="Data de Início" name="dataInicio" type="date" value={formData.dataInicio || ''} onChange={handleChange} />
-                                    <InputField label="Validade (meses)" name="validadeMeses" type="number" value={String(formData.validadeMeses || '')} onChange={handleChange} placeholder="Calcula data fim"/>
+                                    <InputField label="Data de Início*" name="dataInicio" type="date" value={formData.dataInicio || ''} onChange={handleChange} />
+                                    <InputField label="Validade (meses)" name="validadeMeses" type="number" value={String(formData.validadeMeses || '')} onChange={handleChange} placeholder="Ex: 12, 24, 36..."/>
                                 </div>
-                                <div className="text-center text-sm text-gray-500">ou</div>
+                                {formData.dataInicio && formData.validadeMeses && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                                        <p className="text-sm text-blue-800">
+                                            <strong>📅 Data Final Calculada:</strong> {new Date(calculateDataFim(formData.dataInicio, Number(formData.validadeMeses)) + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                        </p>
+                                    </div>
+                                )}
+                                <div className="text-center text-sm text-gray-500">ou informe a data final diretamente</div>
                                 <InputField label="Data Final (manual)" name="dataFim" type="date" value={formData.dataFim || ''} onChange={handleChange} />
                             </div>
                         )}

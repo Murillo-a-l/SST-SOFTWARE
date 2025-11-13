@@ -9,7 +9,7 @@ interface EmpresasTabProps {
     onEdit: (empresa: Empresa) => void;
     onAddDocument: (empresa: Empresa, pastaId: number | null) => void;
     onEditDocument: (empresa: Empresa, pastaId: number | null, documento: any) => void;
-    onAddPasta: (empresaId: number, parentId: number | null) => void;
+    onAddPasta: (empresaId: number, parentId: number | null, pasta?: any) => void;
     onDataChange: () => void;
     setConfirmation: (confirmation: any) => void;
 }

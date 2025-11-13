@@ -10,7 +10,7 @@ interface GerenciadorDocumentosProps {
     currentUser: User;
     onAddDocument: (empresa: Empresa, pastaId: number | null) => void;
     onEditDocument: (empresa: Empresa, pastaId: number | null, documento: DocumentoEmpresa) => void;
-    onAddPasta: (empresaId: number, parentId: number | null) => void;
+    onAddPasta: (empresaId: number, parentId: number | null, pasta?: Pasta) => void;
     onDataChange: () => void;
     setConfirmation: (confirmation: any) => void;
 }
@@ -297,9 +297,9 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{!isFolder && formatDate(item.dataFim)}</td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{!isFolder && <StatusBadge status={item.status} />}</td>
                                     <td className="px-3 py-2 whitespace-nowrap text-center text-sm font-medium">
-                                        <ActionMenu 
+                                        <ActionMenu
                                             item={item}
-                                            onEdit={() => isFolder ? console.log('Edit folder not implemented') : onEditDocument(empresa, item.pastaId, item)}
+                                            onEdit={() => isFolder ? onAddPasta(empresa.id, item.parentId, item) : onEditDocument(empresa, item.pastaId, item)}
                                             onDelete={() => handleDelete(item)}
                                             onDownload={!isFolder ? () => handleDownload(item) : undefined}
                                             onSetStatus={!isFolder ? (status) => handleSetStatus(item, status) : undefined}
