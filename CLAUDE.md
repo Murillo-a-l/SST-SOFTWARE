@@ -4,24 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an **Occupational Health Management System** built as a React-based single-page application for managing employee occupational health data, medical exams, documents, and billing in Brazil. The application is designed for companies to track employee health compliance (ASOs, PCMSO), manage contracts, and handle financial operations related to occupational health services.
+This is an **Occupational Health Management System** built as a full-stack application for managing employee occupational health data, medical exams, documents, and billing in Brazil. The application is designed for companies to track employee health compliance (ASOs, PCMSO), manage contracts, and handle financial operations related to occupational health services.
 
 **Key Characteristics:**
-- Frontend-only application with no backend (currently)
-- All data persists in browser `localStorage`
+- **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS (port 3002)
+- **Backend**: Node.js + Express + TypeScript + Prisma ORM (port 3001)
+- **Database**: PostgreSQL 18
+- **Hybrid architecture**: Currently migrating from localStorage to PostgreSQL (90% complete)
 - Multi-company architecture with matriz/filial (parent/subsidiary) relationships
-- Built with React 19, TypeScript, and Vite
 - Integrates with Google Gemini AI for occupational health assistance
-- Tailwind CSS for styling (inferred from component structure)
+- NFS-e (Brazilian tax invoice) integration via IPM/AtendeNet webservice
 
 ## Build and Development Commands
+
+### Frontend
 
 ```bash
 # Install dependencies
 npm install
 
-# Run development server
-# Server runs on http://localhost:3000 (configured in vite.config.ts)
+# Run development server (runs on http://localhost:3002)
 npm run dev
 
 # Build for production
@@ -32,47 +34,169 @@ npm run preview
 ```
 
 **Dev Server Configuration:**
-- Port: 3000
+- Port: 3002 (changed from 3000)
 - Host: 0.0.0.0 (accessible from network)
 - Hot Module Replacement (HMR) enabled via Vite
 
+### Backend
+
+```bash
+# Navigate to backend directory
+cd backend
+
+# Install dependencies
+npm install
+
+# Setup database (first time only)
+# 1. Create PostgreSQL database: CREATE DATABASE occupational_health;
+# 2. Copy .env.example to .env and configure DATABASE_URL
+# 3. IMPORTANT: Merge schema-extra.prisma into schema.prisma (see note below)
+# 4. Run migrations
+npm run prisma:generate
+npm run prisma:migrate
+
+# Seed database with initial data (admin user, document types)
+npm run prisma:seed
+
+# Run development server with hot reload (runs on http://localhost:3001)
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+
+# Open Prisma Studio (database GUI on http://localhost:5555)
+npm run prisma:studio
+```
+
+**Important Prisma Note:**
+The Prisma schema is split into two files: `backend/prisma/schema.prisma` (partial) and `backend/prisma/schema-extra.prisma` (rest). Before running migrations, you must copy the contents of `schema-extra.prisma` and append it to the end of `schema.prisma`.
+
 ## Environment Configuration
 
-Create a `.env.local` file in the project root with:
-```
+### Frontend (.env.local in project root)
+
+```env
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 **Important:**
 - Get your API key from https://ai.google.dev/
 - The application will display an error alert if the Gemini API key is missing when AI features are used
-- Error message: "Chave da API ausente. Configure VITE_GEMINI_API_KEY."
-- The key is exposed in the browser via `import.meta.env` and `vite.config.ts` define statements
+- The key is exposed in the browser via `import.meta.env`
+
+### Backend (backend/.env)
+
+```env
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/occupational_health?schema=public"
+
+# JWT
+JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+JWT_EXPIRES_IN="7d"
+
+# Server
+PORT=3001
+NODE_ENV="development"
+
+# Frontend URL (for CORS)
+FRONTEND_URL="http://localhost:3002"
+
+# Gemini API (optional - for AI features)
+GEMINI_API_KEY="your-gemini-api-key"
+
+# NFS-e (optional - for Brazilian tax invoices)
+NFSE_IPM_LOGIN="your-cnpj"
+NFSE_IPM_SENHA="your-password"
+NFSE_IPM_CIDADE="8055"
+NFSE_IPM_MODO_TESTE="true"
+```
+
+See `backend/.env.example` for a template.
 
 ## Architecture
 
-### Data Persistence Layer (`services/dbService.ts`)
+### Hybrid Data Persistence (Migration in Progress)
 
-The entire application state is managed through a localStorage-based database service. This is NOT a real backend - it's a client-side persistence layer.
+The application is currently in a **hybrid state**, transitioning from localStorage to PostgreSQL:
 
-**Key Functions:**
-- `loadDb()`: Loads data from localStorage
-- `saveDb(db)`: Saves data to localStorage
-- `initializeDb()`: Initializes DB and runs migrations
-- `getInitialDb()`: Returns default/empty database structure
+**Using Backend API (✅ Complete):**
+- Authentication (login, logout, session management)
+- Empresas (companies) - full CRUD
+- Funcionarios (employees) - full CRUD
 
-**CRUD Services:**
-The file exports CRUD services for all entities (e.g., `funcionarioService`, `empresaService`, `documentoService`). These services provide `add()`, `update()`, `remove()`, `getAll()`, `getById()` methods.
+**Still Using localStorage (⚠️ Pending migration):**
+- ExameRealizado (medical exam records)
+- DocumentoEmpresa (company documents)
+- PCMSO configuration (cargos, ambientes, riscos, protocolos)
+- Financial module (catálogo de serviços, cobranças, NFe)
 
-**Important DB Functions:**
-- `detectarDuplicados()`: Detects duplicate employees by CPF or similar names
-- `mesclarFuncionarios()`: Merges duplicate employee records
-- `limparExamesOrfaos()`: Removes orphaned exam records
-- `updateAllDocumentStatuses()`: Updates document statuses based on expiration dates (acts as a "cron job")
-- `getCurrentUser()` / `logout()`: Simple session management
+**Data Flow:**
+1. Frontend calls `services/apiService.ts` for API operations
+2. API service wraps `backend/src/` Express endpoints
+3. Backend uses Prisma ORM to interact with PostgreSQL
+4. For non-migrated features, frontend falls back to `services/dbService.ts` (localStorage)
 
-### Type System (`types.ts`)
+### Backend Structure (`backend/`)
 
+**Server (`src/server.ts`):**
+- Express app with CORS, Helmet, error handling
+- Runs on port 3001
+- Graceful shutdown support
+
+**Routes (`src/routes/`):**
+- `auth.routes.ts` - Authentication (login, logout, me)
+- `empresa.routes.ts` - Company CRUD
+- `funcionario.routes.ts` - Employee CRUD
+- `exame.routes.ts` - Exam records
+- `documento.routes.ts` - Documents
+- `pasta.routes.ts` - Folder hierarchy
+- `documentoTipo.routes.ts` - Document types
+- `catalogoServico.routes.ts` - Service catalog
+- `servicoPrestado.routes.ts` - Rendered services
+- `cobranca.routes.ts` - Billing
+- `nfe.routes.ts` - Tax invoices
+- `configuracaoNFSe.routes.ts` - NFS-e configuration
+
+**Controllers (`src/controllers/`):**
+- Handle request/response logic
+- Call Prisma for database operations
+- Return standardized JSON responses
+
+**Middleware (`src/middleware/`):**
+- `auth.ts` - JWT authentication and role-based authorization
+- `errorHandler.ts` - Centralized error handling
+
+**Services (`src/services/nfse/`):**
+- `ipmWebserviceClient.ts` - SOAP client for IPM/AtendeNet
+- `ipmXmlGenerator.ts` - Generates XML for NFS-e emission
+- `ipmXmlParser.ts` - Parses XML responses
+- `types.ts` - NFS-e type definitions
+
+**Database (`src/config/database.ts` + `prisma/`):**
+- Prisma client configuration
+- Schema with 18 tables
+- Soft deletes on all main tables
+- Seed script creates admin user and default document types
+
+### Frontend Structure
+
+**API Service Layer (`services/apiService.ts`):**
+- Wrapper around backend REST API
+- Uses native fetch (no axios)
+- JWT token management via sessionStorage
+- Exports: `authApi`, `empresaApi`, `funcionarioApi`
+- Error handling with typed `ApiError` class
+
+**Legacy Data Layer (`services/dbService.ts`):**
+- localStorage-based persistence (legacy)
+- Still used for non-migrated entities
+- Exports CRUD services for all types
+- Includes migration utilities and data validation
+
+**Type System (`types.ts`):**
 All TypeScript interfaces are centralized in `types.ts`. Key types:
 
 **Core Entities:**
@@ -108,7 +232,8 @@ The application follows a view-based architecture:
 
 **Main App State (`App.tsx`):**
 - Manages all modal states and data reloading
-- Handles authentication/session state
+- Handles authentication/session state via `authApi`
+- Calls `reloadData()` to fetch empresas and funcionarios from backend API
 - Filters data based on selected company (matriz + filiais)
 - Generates notifications for duplicates and pending signatures
 - Routes between views: dashboard, empresas, funcionarios, financeiro, pcmso, relatorios, configuracoes
@@ -124,6 +249,8 @@ The application follows a view-based architecture:
 
 **Modals:** All user interactions happen through modals located in `components/modals/`. Key patterns:
 - Manager modals handle creation/editing (e.g., `EmpresaManagerModal`, `DocumentoManagerModal`)
+- Modals for empresas and funcionarios use `apiService` for backend persistence
+- Other modals still use `dbService` for localStorage
 - The app uses `initialName` props to pre-populate modals when creating related entities on-the-fly
 - All modals call `onSaveSuccess` / `onDataChange` callbacks to trigger data reload
 
@@ -146,56 +273,84 @@ The app integrates Google's Gemini AI (using `gemini-1.5-flash` model) for:
 
 **Error Handling:** All Gemini functions throw `GeminiError` objects with a `message` property. The app checks for API key presence via `assertApiKey()` before making requests.
 
-## Data Migration
-
-The app includes a migration system in `dbService.ts`:
-- `runMigration()`: Automatically migrates from single-company to multi-company schema
-- Creates a default company from legacy `pcmsoConfig` if `empresas` array is empty
-- Associates all existing employees with the default company
-- This runs automatically on `initializeDb()`
-
 ## Authentication
 
-**INSECURE - Demo purposes only:**
-- User passwords stored in plaintext in localStorage
-- Default credentials: `admin` / `admin` and `joao.medico` / `123`
-- Session managed via `SESSION_KEY` in localStorage
-- Login handled by `LoginPage` component
+**Backend JWT Authentication:**
+- Passwords hashed with bcrypt (10 salt rounds)
+- JWT tokens issued on login (7 day expiration by default)
+- Tokens stored in sessionStorage on frontend
+- Middleware validates JWT and checks user role for protected routes
+- Default credentials (seeded by `prisma:seed`):
+  - Admin: `admin` / `admin`
+  - User: `joao.medico` / `123`
 
-**In production, this MUST be replaced with:**
-- Proper backend authentication
-- Password hashing
-- Secure session management
+**Frontend Session:**
+- Managed by `authApi` in `apiService.ts`
+- Session token stored in sessionStorage (key: `token`)
+- `getCurrentUser()` fetches current user from `/api/auth/me`
+- `logout()` clears token and calls backend logout endpoint
 
 ## Important Conventions
 
-1. **Company Filtering:** Many views filter data by `selectedEmpresaId`. When a matriz is selected, data includes both the matriz and all its filiais via `getCompanyIdsForFilter()`.
+1. **API vs localStorage:** When working with empresas or funcionarios, ALWAYS use `apiService` methods (e.g., `empresaApi.create()`, not `empresaService.add()`). For other entities not yet migrated, use `dbService`.
 
-2. **Modal Pattern:** Opening modals for quick-add scenarios:
+2. **Company Filtering:** Many views filter data by `selectedEmpresaId`. When a matriz is selected, data includes both the matriz and all its filiais via `getCompanyIdsForFilter()`.
+
+3. **Modal Pattern:** Opening modals for quick-add scenarios:
    - Parent modal can call `onOpenEmpresaManager("Company Name")` to create a company on-the-fly
    - The new modal receives `initialName` prop and pre-populates the name field
    - After save, control returns to parent modal with `reloadData()` called
 
-3. **Document Status Updates:** The app calls `updateAllDocumentStatuses()` on init, which acts as a cron job to update document statuses based on current date vs. expiration dates.
+4. **Document Status Updates:** The app calls `updateAllDocumentStatuses()` on init (localStorage only), which acts as a cron job to update document statuses based on current date vs. expiration dates.
 
-4. **Notification System:** Notifications are generated dynamically in `App.tsx` based on:
+5. **Notification System:** Notifications are generated dynamically in `App.tsx` based on:
    - Duplicate employees detected
    - Pending document signatures for current user
 
-5. **Confirmation Modal:** Destructive actions (deactivate, delete, reactivate) use `ConfirmationModal` with customizable messages and confirmation text requirements.
+6. **Confirmation Modal:** Destructive actions (deactivate, delete, reactivate) use `ConfirmationModal` with customizable messages and confirmation text requirements.
 
-6. **Data Reload Pattern:** After any data modification, call `reloadData()` to refresh `data` state from localStorage. This triggers recalculation of stats, notifications, and filtered data.
+7. **Data Reload Pattern:** After any data modification, call `reloadData()` to refresh state. This is now async and fetches empresas and funcionarios from the backend API via `Promise.all()`.
+
+8. **Error Handling:** The `apiService` throws `ApiError` objects with `message` and optional `statusCode`. Components should catch these and display user-friendly messages (currently using `alert()`, but `react-hot-toast` is installed for future migration).
 
 ## Path Aliases
 
 The app uses `@/` as an alias for the project root:
 ```typescript
 import { dbService } from '@/services/dbService';
+import { empresaApi } from '@/services/apiService';
 ```
 
-## Backend Status
+## Database Schema
 
-The `backend/` directory exists but is empty (contains only an empty `package.json`). All references to `backend/src/server.ts` in documentation are placeholders. The application currently has no backend implementation.
+The Prisma schema defines 18 tables including:
+
+**Core Tables:**
+- `users` - System users with role-based access
+- `empresas` - Companies with matriz/filial relationships
+- `funcionarios` - Employees linked to companies
+- `exames_realizados` - Medical exam records
+
+**Document Management:**
+- `pastas` - Folder hierarchy
+- `documento_tipos` - Document type definitions
+- `documentos_empresa` - Company documents with expiration and signatures
+
+**PCMSO:**
+- `cargos` - Job roles
+- `ambientes` - Work environments
+- `riscos` - Occupational risks
+- `master_exames` - Exam catalog
+- `protocolos_exame` - Exam protocols by job role
+- `periodicidade_cargos` - Exam periodicity rules
+
+**Financial:**
+- `catalogo_servicos` - Service catalog
+- `servicos_prestados` - Rendered services
+- `cobrancas` - Billing records
+- `nfes` - Tax invoices
+
+All tables include soft delete (`deletedAt`) and timestamps (`createdAt`, `updatedAt`).
 
 ## Brazilian Context
 
@@ -205,7 +360,39 @@ This application is designed for Brazilian occupational health regulations:
 - ASO (Atestado de Saúde Ocupacional) - occupational health certificates
 - PCMSO (Programa de Controle Médico de Saúde Ocupacional) - mandatory health program
 - PGR (Programa de Gerenciamento de Riscos) - risk management program
-- NFe (Nota Fiscal Eletrônica) - electronic tax invoice
+- NFe (Nota Fiscal Eletrônica) - electronic tax invoice via IPM/AtendeNet webservice
 - LC 116 service codes and ISS (Imposto Sobre Serviços) tax rates
 
 All UI text and error messages are in Portuguese (Brazil).
+
+## Migration Status
+
+**What's Completed (90%):**
+- ✅ Backend API fully functional
+- ✅ PostgreSQL database with 18 tables
+- ✅ Authentication integrated (JWT + bcrypt)
+- ✅ Empresas CRUD via API
+- ✅ Funcionarios CRUD via API
+- ✅ Frontend loads empresas and funcionarios from API
+
+**What's Pending (10%):**
+- ⚠️ Exames still use localStorage
+- ⚠️ Documents still use localStorage
+- ⚠️ PCMSO configuration still uses localStorage
+- ⚠️ Financial module still uses localStorage
+- ⚠️ Replace `alert()` with `react-hot-toast` notifications
+- ⚠️ Add loading spinners (state exists but no UI)
+
+See `STATUS-ATUAL.md` for detailed current status and `CHECKLIST-IMPLEMENTACAO.md` for complete task list.
+
+## Session Documentation
+
+The project has detailed session logs documenting the implementation:
+- `SESSAO-01-IMPLEMENTADO.md` - Backend initial implementation
+- `SESSAO-02-TESTES-E-CORRECOES.md` - Tests and corrections
+- `SESSAO-03-INTEGRACAO-API.md` - API service creation
+- `SESSAO-04-INTEGRACAO-COMPONENTES.md` - Component integration with API
+- `SESSAO-05-CARREGAMENTO-API.md` - Data loading refactor
+- `SESSAO-06-*.md` - Employee modal integration
+
+Always check `STATUS-ATUAL.md` first for the current state of the system.
