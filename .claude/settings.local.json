@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(npm run dev:*)",
+      "Bash(wc:*)",
+      "Bash(npm install:*)",
+      "Bash(taskkill /F /PID 9940)",
+      "Bash(curl:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjI5OTE2NDIsImV4cCI6MTc2MzU5NjQ0Mn0.iGBsmucaGFLvCKuvIVN_-VmKPEolSjxKOwlh9-6v0Ek\")",
+      "Bash(for endpoint in exames documentos servicos-prestados cobrancas nfes)",
+      "Bash(do echo \"=== $endpoint ===\")",
+      "Bash(python:*)",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

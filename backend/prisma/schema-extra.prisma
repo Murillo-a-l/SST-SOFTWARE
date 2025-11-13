@@ -1,0 +1,358 @@
+// ESTE ARQUIVO CONTÉM O RESTO DO SCHEMA
+// COPIE E COLE AO FINAL DO schema.prisma
+
+// ============= PASTAS E DOCUMENTOS =============
+
+model Pasta {
+  id        Int       @id @default(autoincrement())
+  empresaId Int       @map("empresa_id")
+  nome      String
+  parentId  Int?      @map("parent_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  empresa   Empresa            @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  parent    Pasta?             @relation("SubPastas", fields: [parentId], references: [id])
+  subPastas Pasta[]            @relation("SubPastas")
+  documentos DocumentoEmpresa[]
+
+  @@index([empresaId])
+  @@index([parentId])
+  @@map("pastas")
+}
+
+model DocumentoTipo {
+  id                   Int      @id @default(autoincrement())
+  nome                 String   @unique
+  validadeMesesPadrao  Int?     @map("validade_meses_padrao")
+  alertaDias           Int      @map("alerta_dias")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  documentos DocumentoEmpresa[]
+
+  @@map("documento_tipos")
+}
+
+model DocumentoEmpresa {
+  id                          Int              @id @default(autoincrement())
+  empresaId                   Int              @map("empresa_id")
+  pastaId                     Int?             @map("pasta_id")
+  tipoId                      Int              @map("tipo_id")
+  nome                        String
+  dataUpload                  DateTime         @default(now()) @map("data_upload")
+  arquivoUrl                  String           @map("arquivo_url")
+  observacoes                 String?          @db.Text
+  temValidade                 Boolean          @default(false) @map("tem_validade")
+  dataInicio                  DateTime?        @map("data_inicio") @db.Date
+  dataFim                     DateTime?        @map("data_fim") @db.Date
+  status                      DocumentoStatus  @default(ATIVO)
+  dadosSensiveis              Boolean          @default(false) @map("dados_sensiveis")
+  statusAssinatura            SignatureStatus  @default(NAO_REQUER) @map("status_assinatura")
+  requerAssinaturaDeId        Int?             @map("requer_assinatura_de_id")
+  solicitadoPorId             Int?             @map("solicitado_por_id")
+  dataSolicitacaoAssinatura   DateTime?        @map("data_solicitacao_assinatura")
+  dataConclusaoAssinatura     DateTime?        @map("data_conclusao_assinatura")
+  observacoesAssinatura       String?          @map("observacoes_assinatura") @db.Text
+  createdAt                   DateTime         @default(now()) @map("created_at")
+  updatedAt                   DateTime         @updatedAt @map("updated_at")
+  deletedAt                   DateTime?        @map("deleted_at")
+
+  // Relations
+  empresa            Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  pasta              Pasta?        @relation(fields: [pastaId], references: [id], onDelete: SetNull)
+  tipo               DocumentoTipo @relation(fields: [tipoId], references: [id])
+  requerAssinaturaDe User?         @relation("DocumentosParaAssinarPorUsuario", fields: [requerAssinaturaDeId], references: [id])
+  solicitadoPor      User?         @relation("DocumentosSolicitadosPorUsuario", fields: [solicitadoPorId], references: [id])
+
+  @@index([empresaId])
+  @@index([pastaId])
+  @@index([tipoId])
+  @@index([status])
+  @@index([statusAssinatura])
+  @@map("documentos_empresa")
+}
+
+enum DocumentoStatus {
+  ATIVO
+  VENCENDO
+  VENCIDO
+  ENCERRADO
+}
+
+enum SignatureStatus {
+  NAO_REQUER
+  PENDENTE
+  ASSINADO
+  REJEITADO
+}
+
+// ============= PCMSO =============
+
+model Cargo {
+  id                   Int      @id @default(autoincrement())
+  nomePadronizado      String   @unique @map("nome_padronizado")
+  cboCodigo            String?  @map("cbo_codigo")
+  descricaoAtividades  String?  @map("descricao_atividades") @db.Text
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  ambientes         CargoAmbienteLink[]
+  riscos            CargoRiscoLink[]
+  protocolos        ProtocoloExame[]
+  periodicidades    PeriodicidadeCargo[]
+
+  @@map("cargos")
+}
+
+model Ambiente {
+  id                 Int      @id @default(autoincrement())
+  nome               String
+  ghe                String?
+  descricaoDetalhada String?  @map("descricao_detalhada") @db.Text
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cargos CargoAmbienteLink[]
+
+  @@map("ambientes")
+}
+
+model Risco {
+  id              Int       @id @default(autoincrement())
+  nome            String
+  tipo            TipoRisco
+  descricaoAgente String?   @map("descricao_agente") @db.Text
+  danosPossiveis  String?   @map("danos_possiveis") @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  cargos CargoRiscoLink[]
+
+  @@map("riscos")
+}
+
+enum TipoRisco {
+  Fisico
+  Quimico
+  Biologico
+  Ergonomico
+  Acidentes
+}
+
+model MasterExame {
+  id            Int              @id @default(autoincrement())
+  nomeExame     String           @map("nome_exame")
+  codigoEsocial String?          @map("codigo_esocial")
+  categoria     CategoriaExame
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  protocolos ProtocoloExame[]
+
+  @@map("master_exames")
+}
+
+enum CategoriaExame {
+  clinico
+  complementar
+  especifico
+}
+
+model CargoAmbienteLink {
+  id         Int      @id @default(autoincrement())
+  cargoId    Int      @map("cargo_id")
+  ambienteId Int      @map("ambiente_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  cargo    Cargo    @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  ambiente Ambiente @relation(fields: [ambienteId], references: [id], onDelete: Cascade)
+
+  @@unique([cargoId, ambienteId])
+  @@index([cargoId])
+  @@index([ambienteId])
+  @@map("cargo_ambiente_links")
+}
+
+model CargoRiscoLink {
+  id        Int      @id @default(autoincrement())
+  cargoId   Int      @map("cargo_id")
+  riscoId   Int      @map("risco_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  cargo Cargo @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  risco Risco @relation(fields: [riscoId], references: [id], onDelete: Cascade)
+
+  @@unique([cargoId, riscoId])
+  @@index([cargoId])
+  @@index([riscoId])
+  @@map("cargo_risco_links")
+}
+
+model ProtocoloExame {
+  id                   Int      @id @default(autoincrement())
+  cargoId              Int      @map("cargo_id")
+  exameId              Int      @map("exame_id")
+  fazerAdmissional     Boolean  @default(false) @map("fazer_admissional")
+  fazerPeriodico       Boolean  @default(false) @map("fazer_periodico")
+  fazerDemissional     Boolean  @default(false) @map("fazer_demissional")
+  retornoTrabalho      Boolean  @default(false) @map("retorno_trabalho")
+  mudancaRisco         Boolean  @default(false) @map("mudanca_risco")
+  periodicidadeDetalhe String?  @map("periodicidade_detalhe") @db.Text
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cargo Cargo       @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  exame MasterExame @relation(fields: [exameId], references: [id], onDelete: Cascade)
+
+  @@unique([cargoId, exameId])
+  @@index([cargoId])
+  @@index([exameId])
+  @@map("protocolos_exames")
+}
+
+model PeriodicidadeCargo {
+  id                 Int      @id @default(autoincrement())
+  cargoId            Int      @unique @map("cargo_id")
+  periodicidadeMeses Int      @map("periodicidade_meses")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cargo Cargo @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+
+  @@map("periodicidades_cargos")
+}
+
+// ============= FINANCEIRO =============
+
+model CatalogoServico {
+  id                 Int      @id @default(autoincrement())
+  codigoInterno      String   @unique @map("codigo_interno")
+  nome               String
+  tipo               String
+  precoPadrao        Decimal  @map("preco_padrao") @db.Decimal(10, 2)
+  descricao          String?  @db.Text
+  aliquotaISS        Decimal? @map("aliquota_iss") @db.Decimal(5, 2)
+  codigoServicoLC116 String?  @map("codigo_servico_lc116")
+  cnae               String?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  servicosPrestados ServicoPrestado[]
+
+  @@map("catalogo_servicos")
+}
+
+model ServicoPrestado {
+  id                  Int                    @id @default(autoincrement())
+  empresaId           Int                    @map("empresa_id")
+  servicoId           Int                    @map("servico_id")
+  funcionarioId       Int?                   @map("funcionario_id")
+  dataRealizacao      DateTime               @map("data_realizacao") @db.Date
+  valorCobrado        Decimal                @map("valor_cobrado") @db.Decimal(10, 2)
+  quantidade          Int                    @default(1)
+  descricaoAdicional  String?                @map("descricao_adicional") @db.Text
+  cobrancaId          Int?                   @map("cobranca_id")
+  nfeId               Int?                   @map("nfe_id")
+  status              StatusServicoPrestado  @default(PENDENTE)
+  createdAt           DateTime               @default(now()) @map("created_at")
+  updatedAt           DateTime               @updatedAt @map("updated_at")
+  deletedAt           DateTime?              @map("deleted_at")
+
+  // Relations
+  empresa     Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  servico     CatalogoServico  @relation(fields: [servicoId], references: [id])
+  funcionario Funcionario?     @relation(fields: [funcionarioId], references: [id], onDelete: SetNull)
+  cobranca    Cobranca?        @relation(fields: [cobrancaId], references: [id])
+  nfe         NFe?             @relation(fields: [nfeId], references: [id])
+
+  @@index([empresaId])
+  @@index([servicoId])
+  @@index([funcionarioId])
+  @@index([cobrancaId])
+  @@index([status])
+  @@map("servicos_prestados")
+}
+
+enum StatusServicoPrestado {
+  PENDENTE
+  FATURADO
+  COBRADO
+}
+
+model Cobranca {
+  id             Int             @id @default(autoincrement())
+  empresaId      Int             @map("empresa_id")
+  valorTotal     Decimal         @map("valor_total") @db.Decimal(10, 2)
+  dataEmissao    DateTime        @map("data_emissao") @db.Date
+  dataVencimento DateTime        @map("data_vencimento") @db.Date
+  status         CobrancaStatus  @default(EMITIDA)
+  desconto       Decimal?        @db.Decimal(10, 2)
+  multa          Decimal?        @db.Decimal(10, 2)
+  juros          Decimal?        @db.Decimal(10, 2)
+  observacoes    String?         @db.Text
+  nfeId          Int?            @map("nfe_id")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  deletedAt      DateTime?       @map("deleted_at")
+
+  // Relations
+  empresa           Empresa           @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  servicosPrestados ServicoPrestado[]
+  nfe               NFe?              @relation(fields: [nfeId], references: [id])
+
+  @@index([empresaId])
+  @@index([status])
+  @@index([dataVencimento])
+  @@map("cobrancas")
+}
+
+enum CobrancaStatus {
+  EMITIDA
+  PAGA
+  VENCIDA
+  CANCELADA
+}
+
+model NFe {
+  id                Int        @id @default(autoincrement())
+  empresaId         Int        @map("empresa_id")
+  numero            String?    @unique
+  dataEmissao       DateTime   @map("data_emissao") @db.Date
+  valor             Decimal    @db.Decimal(10, 2)
+  descricaoServicos String     @map("descricao_servicos") @db.Text
+  status            NFeStatus  @default(EM_ELABORACAO)
+  xml               String?    @db.Text
+  pdf               String?    @db.Text
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  deletedAt         DateTime?  @map("deleted_at")
+
+  // Relations
+  empresa           Empresa           @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  servicosPrestados ServicoPrestado[]
+  cobrancas         Cobranca[]
+
+  @@index([empresaId])
+  @@index([status])
+  @@map("nfes")
+}
+
+enum NFeStatus {
+  EM_ELABORACAO
+  ENVIADA
+  AUTORIZADA
+  CANCELADA
+}

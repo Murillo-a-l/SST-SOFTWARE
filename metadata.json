@@ -1,0 +1,5 @@
+{
+  "name": "Occupational Health Management System",
+  "description": "A comprehensive system to manage employee occupational health exams, job roles, risks, and generate PCMSO reports. This modern web application provides tools for data import, employee management, and detailed reporting to ensure workplace health compliance.",
+  "requestFramePermissions": []
+}
