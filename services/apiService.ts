@@ -112,13 +112,6 @@ async function fetchApi<T>(
       );
     }
 
-    // DEBUG: Log do que está sendo retornado
-    if (endpoint === '/empresas') {
-      console.log('⚙️ DEBUG - fetchApi retornando para /empresas:');
-      console.log('  - data completo:', data);
-      console.log('  - data.data:', data.data);
-    }
-
     return data.data as T;
   } catch (error) {
     if (error instanceof ApiError) {
@@ -254,10 +247,6 @@ export const empresaApi = {
    */
   async getAll(): Promise<Empresa[]> {
     const response = await fetchApi<{ empresas: Empresa[] }>('/empresas');
-    console.log('🏢 DEBUG - empresaApi.getAll():');
-    console.log('  - response:', response);
-    console.log('  - response.empresas:', response.empresas);
-    console.log('  - total:', response.empresas?.length || 0);
     return response.empresas;  // fetchApi já retorna data.data, que contém { empresas: [] }
   },
 
