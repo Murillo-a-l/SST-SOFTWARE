@@ -96,13 +96,6 @@ const ActionMenu: React.FC<{
     const showSignButton = !isFolder && onSign && documento?.statusAssinatura === 'PENDENTE' && documento?.requerAssinaturaDeId === currentUser?.id;
     const hasSignedVersion = !isFolder && documento?.arquivoAssinadoBase64 && documento.arquivoAssinadoBase64.length > 0;
 
-    // Debug log para verificar documento assinado
-    if (!isFolder && documento) {
-        console.log('📄 Documento:', documento.nome);
-        console.log('✅ Tem versão assinada?', hasSignedVersion);
-        console.log('📦 arquivoAssinadoBase64:', documento.arquivoAssinadoBase64 ? `${documento.arquivoAssinadoBase64.substring(0, 50)}...` : 'null/undefined');
-    }
-
     return (
         <div className="relative" ref={menuRef}>
             <button onClick={() => setIsOpen(!isOpen)} className="text-gray-500 hover:text-gray-800 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
