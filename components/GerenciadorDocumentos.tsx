@@ -25,14 +25,14 @@ const getFileExtension = (filename: string): string => {
     return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE';
 };
 
-// Helper para obter ícone baseado no tipo MIME
-const getFileIconForType = (tipoArquivo?: string): string => {
-    if (!tipoArquivo) return '📄';
-    if (tipoArquivo.includes('pdf')) return '📕';
-    if (tipoArquivo.includes('image')) return '🖼️';
-    if (tipoArquivo.includes('word') || tipoArquivo.includes('document')) return '📘';
-    if (tipoArquivo.includes('excel') || tipoArquivo.includes('spreadsheet')) return '📊';
-    if (tipoArquivo.includes('zip') || tipoArquivo.includes('compressed')) return '📦';
+// Helper para obter ícone baseado na extensão do arquivo
+const getFileIconForType = (filename: string): string => {
+    const ext = getFileExtension(filename).toLowerCase();
+    if (ext === 'pdf') return '📕';
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(ext)) return '🖼️';
+    if (['doc', 'docx'].includes(ext)) return '📘';
+    if (['xls', 'xlsx'].includes(ext)) return '📊';
+    if (['zip', 'rar', '7z'].includes(ext)) return '📦';
     return '📄';
 };
 
@@ -193,8 +193,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
 
                 // If the base64 doesn't start with "data:", add the proper prefix
                 if (!dataUrl.startsWith('data:')) {
-                    const mimeType = doc.tipoArquivo || 'application/octet-stream';
-                    dataUrl = `data:${mimeType};base64,${dataUrl}`;
+                    dataUrl = `data:application/octet-stream;base64,${dataUrl}`;
                 }
 
                 const link = document.createElement('a');
@@ -285,7 +284,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                                         {isFolder ? 'Pasta' : (
                                             <div className="flex items-center gap-2">
-                                                <span>{getFileIconForType(item.tipoArquivo)}</span>
+                                                <span>{getFileIconForType(item.nome)}</span>
                                                 <span>{item.tipo}</span>
                                                 <span className="text-xs text-gray-400">(.{getFileExtension(item.nome)})</span>
                                             </div>

@@ -446,7 +446,6 @@ interface CreateDocumentoDto {
   nome: string;
   arquivoUrl?: string; // File URL
   arquivoBase64?: string; // Base64 encoded file (alternative to arquivoUrl)
-  tipoArquivo?: string; // MIME type of the file (e.g., 'application/pdf')
   observacoes?: string;
   temValidade?: boolean;
   dataInicio?: string | null;
