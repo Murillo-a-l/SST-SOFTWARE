@@ -64,6 +64,7 @@ export interface DocumentoEmpresa {
   tipo: string; // References DocumentoTipo.nome
   dataUpload: string;
   arquivoBase64: string;
+  arquivoAssinadoBase64?: string;
   observacoes?: string;
 
   // Fields for expiration management

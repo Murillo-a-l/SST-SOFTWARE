@@ -68,7 +68,7 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
                     return;
                 }
                 updatedData = {
-                    arquivoBase64: novaVersaoBase64,
+                    arquivoAssinadoBase64: novaVersaoBase64,  // Salva em campo separado
                     statusAssinatura: 'ASSINADO',
                     dataConclusaoAssinatura: new Date().toISOString(),
                 };
