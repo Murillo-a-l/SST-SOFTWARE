@@ -211,7 +211,10 @@ const App: React.FC = () => {
         
         // 2. Pending signatures for current user
         if (currentUser) {
-            const pendingSignatures = dbService.getAssinaturasPendentes(currentUser.id);
+            const pendingSignatures = (data.documentosEmpresa || []).filter(doc =>
+                doc.requerAssinaturaDeId === currentUser.id &&
+                doc.statusAssinatura === 'PENDENTE'
+            );
             pendingSignatures.forEach(doc => {
                 const requester = data.users.find(u => u.id === doc.solicitadoPorId);
                 newNotifications.push({
@@ -277,16 +280,25 @@ const App: React.FC = () => {
 
     const stats = useMemo(() => {
         const activeFuncionarios = filteredFuncionarios.filter(f => f.ativo);
-        const statsData = { 
-            totalFuncionarios: activeFuncionarios.length, 
-            examesAtrasados: 0, 
-            vencendo30Dias: 0, 
+
+        // Calcular assinaturas pendentes dos documentos da API
+        const assinaturasPendentes = currentUser
+            ? filteredDocumentos.filter(doc =>
+                doc.requerAssinaturaDeId === currentUser.id &&
+                doc.statusAssinatura === 'PENDENTE'
+              ).length
+            : 0;
+
+        const statsData = {
+            totalFuncionarios: activeFuncionarios.length,
+            examesAtrasados: 0,
+            vencendo30Dias: 0,
             emDia: 0,
             totalContratos: 0,
             contratosAtivos: 0,
             contratosVencendo: 0,
             contratosVencidos: 0,
-            assinaturasPendentes: currentUser ? dbService.getAssinaturasPendentes(currentUser.id).length : 0,
+            assinaturasPendentes,
         };
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
