@@ -64,7 +64,6 @@ export interface DocumentoEmpresa {
   tipo: string; // References DocumentoTipo.nome
   dataUpload: string;
   arquivoBase64: string;
-  tipoArquivo?: string; // MIME type of the file (e.g., 'application/pdf')
   observacoes?: string;
 
   // Fields for expiration management

@@ -13,6 +13,7 @@ interface GerenciadorDocumentosProps {
     onAddPasta: (empresaId: number, parentId: number | null, pasta?: Pasta) => void;
     onDataChange: () => void;
     setConfirmation: (confirmation: any) => void;
+    onOpenSignature?: (documento: DocumentoEmpresa) => void;
 }
 
 const FolderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>;
@@ -25,14 +26,14 @@ const getFileExtension = (filename: string): string => {
     return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE';
 };
 
-// Helper para obter ícone baseado no tipo MIME
-const getFileIconForType = (tipoArquivo?: string): string => {
-    if (!tipoArquivo) return '📄';
-    if (tipoArquivo.includes('pdf')) return '📕';
-    if (tipoArquivo.includes('image')) return '🖼️';
-    if (tipoArquivo.includes('word') || tipoArquivo.includes('document')) return '📘';
-    if (tipoArquivo.includes('excel') || tipoArquivo.includes('spreadsheet')) return '📊';
-    if (tipoArquivo.includes('zip') || tipoArquivo.includes('compressed')) return '📦';
+// Helper para obter ícone baseado na extensão do arquivo
+const getFileIconForType = (filename: string): string => {
+    const ext = getFileExtension(filename).toLowerCase();
+    if (ext === 'pdf') return '📕';
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg'].includes(ext)) return '🖼️';
+    if (['doc', 'docx'].includes(ext)) return '📘';
+    if (['xls', 'xlsx'].includes(ext)) return '📊';
+    if (['zip', 'rar', '7z'].includes(ext)) return '📦';
     return '📄';
 };
 
@@ -67,8 +68,8 @@ const SignatureStatusBadge: React.FC<{ status: SignatureStatus, assignedTo?: str
 };
 
 // Action Menu Component
-const ActionMenu: React.FC<{ item: DocumentoEmpresa | Pasta, onEdit: () => void, onDownload?: () => void, onSetStatus?: (status: DocumentoStatus) => void, onDelete: () => void }> = 
-({ item, onEdit, onDownload, onSetStatus, onDelete }) => {
+const ActionMenu: React.FC<{ item: DocumentoEmpresa | Pasta, onEdit: () => void, onDownload?: () => void, onSetStatus?: (status: DocumentoStatus) => void, onDelete: () => void, onSign?: () => void, currentUser?: User }> =
+({ item, onEdit, onDownload, onSetStatus, onDelete, onSign, currentUser }) => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +84,8 @@ const ActionMenu: React.FC<{ item: DocumentoEmpresa | Pasta, onEdit: () => void,
     }, []);
 
     const isFolder = 'parentId' in item;
+    const documento = !isFolder ? (item as DocumentoEmpresa) : null;
+    const showSignButton = !isFolder && onSign && documento?.statusAssinatura === 'PENDENTE' && documento?.requerAssinaturaDeId === currentUser?.id;
 
     return (
         <div className="relative" ref={menuRef}>
@@ -94,6 +97,7 @@ const ActionMenu: React.FC<{ item: DocumentoEmpresa | Pasta, onEdit: () => void,
                     <div className="py-1" role="menu" aria-orientation="vertical">
                         <MenuItem onClick={() => { onEdit(); setIsOpen(false); }}>{isFolder ? 'Renomear' : 'Editar'}</MenuItem>
                         {!isFolder && onDownload && <MenuItem onClick={() => { onDownload(); setIsOpen(false); }}>Baixar</MenuItem>}
+                        {showSignButton && <MenuItem onClick={() => { onSign!(); setIsOpen(false); }} className="text-blue-600 hover:bg-blue-50 hover:text-blue-800">✍️ Assinar Documento</MenuItem>}
                         {!isFolder && onSetStatus && item.status !== 'ENCERRADO' && <MenuItem onClick={() => { onSetStatus('ENCERRADO'); setIsOpen(false); }}>Encerrar</MenuItem>}
                         <MenuItem onClick={() => { onDelete(); setIsOpen(false); }} className="text-red-600 hover:bg-red-50 hover:text-red-800">Excluir</MenuItem>
                     </div>
@@ -111,7 +115,7 @@ const MenuItem: React.FC<{ onClick: () => void, children: React.ReactNode, class
 
 
 export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (props) => {
-    const { empresa, documentos, pastas, users, currentUser, onAddDocument, onEditDocument, onAddPasta, onDataChange, setConfirmation } = props;
+    const { empresa, documentos, pastas, users, currentUser, onAddDocument, onEditDocument, onAddPasta, onDataChange, setConfirmation, onOpenSignature } = props;
     
     const [currentFolderId, setCurrentFolderId] = useState<number | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -193,8 +197,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
 
                 // If the base64 doesn't start with "data:", add the proper prefix
                 if (!dataUrl.startsWith('data:')) {
-                    const mimeType = doc.tipoArquivo || 'application/octet-stream';
-                    dataUrl = `data:${mimeType};base64,${dataUrl}`;
+                    dataUrl = `data:application/octet-stream;base64,${dataUrl}`;
                 }
 
                 const link = document.createElement('a');
@@ -285,7 +288,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                                         {isFolder ? 'Pasta' : (
                                             <div className="flex items-center gap-2">
-                                                <span>{getFileIconForType(item.tipoArquivo)}</span>
+                                                <span>{getFileIconForType(item.nome)}</span>
                                                 <span>{item.tipo}</span>
                                                 <span className="text-xs text-gray-400">(.{getFileExtension(item.nome)})</span>
                                             </div>
@@ -303,6 +306,8 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                                             onDelete={() => handleDelete(item)}
                                             onDownload={!isFolder ? () => handleDownload(item) : undefined}
                                             onSetStatus={!isFolder ? (status) => handleSetStatus(item, status) : undefined}
+                                            onSign={onOpenSignature && !isFolder ? () => onOpenSignature(item as DocumentoEmpresa) : undefined}
+                                            currentUser={currentUser}
                                         />
                                     </td>
                                 </tr>

@@ -19,7 +19,6 @@ const initialFormState = {
     nome: '',
     tipo: 'Outro',
     arquivoBase64: '',
-    tipoArquivo: '',
     observacoes: '',
     temValidade: false,
     dataInicio: null as string | null,
@@ -58,7 +57,6 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
                     nome: documentoToEdit.nome,
                     tipo: documentoToEdit.tipo,
                     arquivoBase64: documentoToEdit.arquivoBase64,
-                    tipoArquivo: documentoToEdit.tipoArquivo || '',
                     observacoes: documentoToEdit.observacoes || '',
                     temValidade: documentoToEdit.temValidade,
                     dataInicio: documentoToEdit.dataInicio,
@@ -88,8 +86,7 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
             setFormData(prev => ({
                 ...prev,
                 nome: prev.nome || file.name,
-                arquivoBase64: base64,
-                tipoArquivo: file.type || 'application/octet-stream'
+                arquivoBase64: base64
             }));
         } catch (error) {
             console.error("Error converting file to Base64:", error);
@@ -171,7 +168,6 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
                 tipo: formData.tipo,
                 nome: formData.nome,
                 arquivoBase64: formData.arquivoBase64,
-                tipoArquivo: formData.tipoArquivo || 'application/octet-stream',
                 observacoes: formData.observacoes || undefined,
                 temValidade: formData.temValidade,
                 dataInicio: formData.dataInicio,

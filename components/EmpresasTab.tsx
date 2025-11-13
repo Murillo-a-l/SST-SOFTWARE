@@ -12,12 +12,13 @@ interface EmpresasTabProps {
     onAddPasta: (empresaId: number, parentId: number | null, pasta?: any) => void;
     onDataChange: () => void;
     setConfirmation: (confirmation: any) => void;
+    onOpenSignature?: (documento: any) => void;
 }
 
 type DetailTab = 'info' | 'docs';
 
 export const EmpresasTab: React.FC<EmpresasTabProps> = (props) => {
-    const { data, currentUser, onAdd, onEdit, onAddDocument, onEditDocument, onAddPasta, onDataChange, setConfirmation } = props;
+    const { data, currentUser, onAdd, onEdit, onAddDocument, onEditDocument, onAddPasta, onDataChange, setConfirmation, onOpenSignature } = props;
     const { empresas } = data;
 
     const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(empresas[0] || null);
@@ -99,17 +100,18 @@ export const EmpresasTab: React.FC<EmpresasTabProps> = (props) => {
                         <div className="pt-5 flex-grow overflow-y-auto">
                             {activeTab === 'info' && <InfoTab empresa={selectedEmpresa} />}
                             {activeTab === 'docs' && 
-                                <GerenciadorDocumentos 
-                                    empresa={selectedEmpresa} 
+                                <GerenciadorDocumentos
+                                    empresa={selectedEmpresa}
                                     documentos={data.documentosEmpresa}
                                     pastas={data.pastas}
                                     users={data.users}
                                     currentUser={currentUser}
                                     onAddDocument={onAddDocument}
-                                    onEditDocument={onEditDocument} 
+                                    onEditDocument={onEditDocument}
                                     onAddPasta={onAddPasta}
-                                    onDataChange={onDataChange} 
+                                    onDataChange={onDataChange}
                                     setConfirmation={setConfirmation}
+                                    onOpenSignature={onOpenSignature}
                                 />}
                         </div>
                     </>
