@@ -64,6 +64,15 @@ router.get('/', async (req, res) => {
             status: calcularStatusDocumento(doc)
         }));
 
+        // Debug: verificar se campo arquivo_assinado_url está sendo retornado
+        const docsComAssinatura = documentosComStatus.filter(d => d.arquivoAssinadoUrl);
+        if (docsComAssinatura.length > 0) {
+            console.log(`📄 GET Documentos: ${docsComAssinatura.length} documento(s) com versão assinada`);
+            docsComAssinatura.forEach(d => {
+                console.log(`  - ${d.nome}: arquivoAssinadoUrl = ${d.arquivoAssinadoUrl.substring(0, 50)}...`);
+            });
+        }
+
         res.json({ status: 'success', data: documentosComStatus });
     } catch (error) {
         console.error('Error fetching documentos:', error);
@@ -256,6 +265,12 @@ router.put('/:id', async (req, res) => {
         const arquivo = arquivoBase64 || arquivoUrl;
         const arquivoAssinado = arquivoAssinadoBase64;
 
+        // Debug: log do que estamos recebendo
+        console.log('📝 UPDATE Documento ID:', id);
+        console.log('  - arquivoBase64:', arquivoBase64 ? `${arquivoBase64.substring(0, 50)}...` : 'null');
+        console.log('  - arquivoAssinadoBase64:', arquivoAssinado ? `${arquivoAssinado.substring(0, 50)}...` : 'null');
+        console.log('  - statusAssinatura:', statusAssinatura);
+
         const documento = await prisma.documentoEmpresa.update({
             where: { id: Number(id) },
             data: {
@@ -278,6 +293,10 @@ router.put('/:id', async (req, res) => {
                 observacoesAssinatura: observacoesAssinatura !== undefined ? observacoesAssinatura : undefined,
             },
         });
+
+        console.log('✅ Documento atualizado com sucesso');
+        console.log('  - ID:', documento.id);
+        console.log('  - arquivoAssinadoUrl salvo:', documento.arquivoAssinadoUrl ? `${documento.arquivoAssinadoUrl.substring(0, 50)}...` : 'null');
 
         res.json(documento);
     } catch (error) {
