@@ -121,7 +121,6 @@ const App: React.FC = () => {
     const reloadData = useCallback(async () => {
         // Não carregar dados se não houver usuário autenticado
         if (!api.auth.getCurrentUser()) {
-            console.log('⚠️ DEBUG - Usuário não autenticado, pulando carregamento de dados');
             setData(dbService.loadDb());
             setIsLoadingData(false);
             return;
@@ -157,12 +156,6 @@ const App: React.FC = () => {
                 api.nfes.getAll(),
             ]);
 
-            console.log('🔍 DEBUG - Dados recebidos da API:');
-            console.log('  - Empresas:', empresas);
-            console.log('  - Total de empresas:', empresas?.length || 0);
-            console.log('  - Funcionários:', funcionarios?.length || 0);
-            console.log('  - Exames:', exames?.length || 0);
-
             // Mesclar dados da API com dados locais
             setData({
                 ...localData,
@@ -177,11 +170,8 @@ const App: React.FC = () => {
                 cobrancas: cobrancas,
                 nfes: nfes,
             });
-
-            console.log('✅ DEBUG - Estado atualizado com sucesso');
         } catch (error) {
-            console.error('❌ DEBUG - Erro ao carregar dados da API:', error);
-            console.error('❌ DEBUG - Usando fallback do localStorage');
+            console.error('Erro ao carregar dados da API:', error);
             // Em caso de erro, carrega do localStorage como fallback
             setData(dbService.loadDb());
         } finally {
@@ -192,16 +182,13 @@ const App: React.FC = () => {
     useEffect(() => {
         if (isInitialLoad) {
             dbService.initializeDb(); // This now includes migration
-            const cleanedCount = dbService.limparExamesOrfaos();
-            if (cleanedCount > 0) {
-                console.log(`Limpeza automática: ${cleanedCount} exames órfãos removidos.`);
-            }
+            dbService.limparExamesOrfaos();
             dbService.updateAllDocumentStatuses(); // "Cron job" for document status
 
             const user = api.auth.getCurrentUser();
             setCurrentUser(user);
             setAuthChecked(true);
-            
+
             reloadData();
             setIsInitialLoad(false);
         }
@@ -791,6 +778,12 @@ const App: React.FC = () => {
             >
                 {confirmation?.message}
             </ConfirmationModal>
+
+            {/* Loading Spinner */}
+            {isLoadingData && <LoadingSpinner message="Carregando dados..." />}
+
+            {/* Toast Notifications */}
+            <Toaster position="top-right" />
         </div>
     );
 };

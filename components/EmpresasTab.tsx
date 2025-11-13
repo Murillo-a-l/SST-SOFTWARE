@@ -20,10 +20,6 @@ export const EmpresasTab: React.FC<EmpresasTabProps> = (props) => {
     const { data, currentUser, onAdd, onEdit, onAddDocument, onEditDocument, onAddPasta, onDataChange, setConfirmation } = props;
     const { empresas } = data;
 
-    console.log('📊 DEBUG - EmpresasTab renderizado');
-    console.log('  - empresas recebidas:', empresas);
-    console.log('  - total de empresas:', empresas?.length || 0);
-
     const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(empresas[0] || null);
     const [activeTab, setActiveTab] = useState<DetailTab>('info');
     const [searchTerm, setSearchTerm] = useState('');
