@@ -446,6 +446,7 @@ interface CreateDocumentoDto {
   nome: string;
   arquivoUrl?: string; // File URL
   arquivoBase64?: string; // Base64 encoded file (alternative to arquivoUrl)
+  tipoArquivo?: string; // MIME type of the file (e.g., 'application/pdf')
   observacoes?: string;
   temValidade?: boolean;
   dataInicio?: string | null;
@@ -463,14 +464,26 @@ export const documentoApi = {
    * Busca todos os documentos
    */
   async getAll(): Promise<any[]> {
-    return await fetchApi<any[]>('/documentos');
+    const docs = await fetchApi<any[]>('/documentos');
+    // Map arquivoUrl to arquivoBase64 for frontend compatibility
+    return docs.map(doc => ({
+      ...doc,
+      arquivoBase64: doc.arquivoUrl,
+      tipo: doc.tipo?.nome || doc.tipo, // Handle both nested and flat tipo
+    }));
   },
 
   /**
    * Busca documento por ID
    */
   async getById(id: number): Promise<any> {
-    return await fetchApi<any>(`/documentos/${id}`);
+    const doc = await fetchApi<any>(`/documentos/${id}`);
+    // Map arquivoUrl to arquivoBase64 for frontend compatibility
+    return {
+      ...doc,
+      arquivoBase64: doc.arquivoUrl,
+      tipo: doc.tipo?.nome || doc.tipo,
+    };
   },
 
   /**

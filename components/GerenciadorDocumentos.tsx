@@ -19,6 +19,23 @@ const FolderIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 
 const FileIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>;
 const DotsVerticalIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>;
 
+// Helper para obter a extensão do arquivo
+const getFileExtension = (filename: string): string => {
+    const parts = filename.split('.');
+    return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE';
+};
+
+// Helper para obter ícone baseado no tipo MIME
+const getFileIconForType = (tipoArquivo?: string): string => {
+    if (!tipoArquivo) return '📄';
+    if (tipoArquivo.includes('pdf')) return '📕';
+    if (tipoArquivo.includes('image')) return '🖼️';
+    if (tipoArquivo.includes('word') || tipoArquivo.includes('document')) return '📘';
+    if (tipoArquivo.includes('excel') || tipoArquivo.includes('spreadsheet')) return '📊';
+    if (tipoArquivo.includes('zip') || tipoArquivo.includes('compressed')) return '📦';
+    return '📄';
+};
+
 const StatusBadge: React.FC<{ status: DocumentoStatus }> = ({ status }) => {
     const statusStyles: Record<DocumentoStatus, string> = {
         ATIVO: 'bg-green-100 text-green-800',
@@ -171,8 +188,17 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
     const handleDownload = (doc: DocumentoEmpresa) => {
         const performDownload = () => {
             try {
+                // Ensure base64 data has proper data URL format
+                let dataUrl = doc.arquivoBase64;
+
+                // If the base64 doesn't start with "data:", add the proper prefix
+                if (!dataUrl.startsWith('data:')) {
+                    const mimeType = doc.tipoArquivo || 'application/octet-stream';
+                    dataUrl = `data:${mimeType};base64,${dataUrl}`;
+                }
+
                 const link = document.createElement('a');
-                link.href = doc.arquivoBase64;
+                link.href = dataUrl;
                 link.download = doc.nome;
                 document.body.appendChild(link);
                 link.click();
@@ -256,7 +282,15 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                                             {!isFolder && item.dadosSensiveis && <span title="Contém dados sensíveis" className="text-red-500">⚠️</span>}
                                         </div>
                                     </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{isFolder ? 'Pasta' : item.tipo}</td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {isFolder ? 'Pasta' : (
+                                            <div className="flex items-center gap-2">
+                                                <span>{getFileIconForType(item.tipoArquivo)}</span>
+                                                <span>{item.tipo}</span>
+                                                <span className="text-xs text-gray-400">(.{getFileExtension(item.nome)})</span>
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
                                         {!isFolder && <SignatureStatusBadge status={item.statusAssinatura} assignedTo={assignedUser} />}
                                     </td>
