@@ -94,7 +94,14 @@ const ActionMenu: React.FC<{
     const isFolder = 'parentId' in item;
     const documento = !isFolder ? (item as DocumentoEmpresa) : null;
     const showSignButton = !isFolder && onSign && documento?.statusAssinatura === 'PENDENTE' && documento?.requerAssinaturaDeId === currentUser?.id;
-    const hasSignedVersion = !isFolder && documento?.arquivoAssinadoBase64;
+    const hasSignedVersion = !isFolder && documento?.arquivoAssinadoBase64 && documento.arquivoAssinadoBase64.length > 0;
+
+    // Debug log para verificar documento assinado
+    if (!isFolder && documento) {
+        console.log('📄 Documento:', documento.nome);
+        console.log('✅ Tem versão assinada?', hasSignedVersion);
+        console.log('📦 arquivoAssinadoBase64:', documento.arquivoAssinadoBase64 ? `${documento.arquivoAssinadoBase64.substring(0, 50)}...` : 'null/undefined');
+    }
 
     return (
         <div className="relative" ref={menuRef}>
@@ -315,7 +322,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                             const assignedUser = !isFolder && item.requerAssinaturaDeId ? users.find(u => u.id === item.requerAssinaturaDeId)?.nome : 'N/A';
                             return (
                                 <tr key={(isFolder ? 'f-' : 'd-') + item.id} className="hover:bg-gray-50">
-                                    <td onDoubleClick={() => isFolder && setCurrentFolderId(item.id)} className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 cursor-pointer">
+                                    <td onClick={() => isFolder && setCurrentFolderId(item.id)} className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 cursor-pointer">
                                         <div className="flex items-center gap-2">
                                             {isFolder ? <FolderIcon /> : <FileIcon />}
                                             <span>{item.nome}</span>

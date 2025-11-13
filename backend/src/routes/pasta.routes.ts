@@ -184,41 +184,57 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE /api/pastas/:id - Deletar pasta (soft delete)
+// Função recursiva para deletar pasta e todo seu conteúdo
+async function deletePastaRecursive(pastaId: number): Promise<void> {
+    // Buscar todas as subpastas
+    const subPastas = await prisma.pasta.findMany({
+        where: {
+            parentId: pastaId,
+            deletedAt: null
+        }
+    });
+
+    // Deletar recursivamente todas as subpastas
+    for (const subPasta of subPastas) {
+        await deletePastaRecursive(subPasta.id);
+    }
+
+    // Deletar todos os documentos da pasta
+    await prisma.documentoEmpresa.updateMany({
+        where: {
+            pastaId: pastaId,
+            deletedAt: null
+        },
+        data: {
+            deletedAt: new Date()
+        }
+    });
+
+    // Deletar a pasta
+    await prisma.pasta.update({
+        where: { id: pastaId },
+        data: { deletedAt: new Date() }
+    });
+}
+
+// DELETE /api/pastas/:id - Deletar pasta em cascata (soft delete)
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
         // Verificar se pasta existe
         const pasta = await prisma.pasta.findFirst({
-            where: { id: Number(id), deletedAt: null },
-            include: {
-                _count: {
-                    select: {
-                        subPastas: true,
-                        documentos: true,
-                    },
-                },
-            },
+            where: { id: Number(id), deletedAt: null }
         });
 
         if (!pasta) {
             return res.status(404).json({ message: 'Pasta não encontrada' });
         }
 
-        // Verificar se tem subpastas ou documentos
-        if (pasta._count.subPastas > 0 || pasta._count.documentos > 0) {
-            return res.status(400).json({
-                message: 'Não é possível excluir pasta com subpastas ou documentos. Mova-os primeiro.'
-            });
-        }
+        // Deletar pasta e todo seu conteúdo recursivamente
+        await deletePastaRecursive(Number(id));
 
-        await prisma.pasta.update({
-            where: { id: Number(id) },
-            data: { deletedAt: new Date() },
-        });
-
-        res.json({ message: 'Pasta deletada com sucesso' });
+        res.json({ message: 'Pasta e todo seu conteúdo foram deletados com sucesso' });
     } catch (error) {
         console.error('Error deleting pasta:', error);
         res.status(500).json({ message: 'Erro ao deletar pasta' });
