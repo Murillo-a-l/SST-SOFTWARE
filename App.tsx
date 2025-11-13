@@ -551,7 +551,7 @@ const App: React.FC = () => {
                             onRegisterExame={() => handleOpenModal('registrarExame')}
                         />;
             case 'empresas':
-                return <EmpresasTab 
+                return <EmpresasTab
                             data={data}
                             currentUser={currentUser!}
                             onAdd={() => handleOpenEmpresaManager()}
@@ -561,6 +561,7 @@ const App: React.FC = () => {
                             onAddPasta={handleOpenPastaManager}
                             onDataChange={reloadData}
                             setConfirmation={setConfirmation}
+                            onOpenSignature={(doc) => setDocumentoParaAssinar(doc)}
                         />;
             case 'funcionarios':
                 return (
