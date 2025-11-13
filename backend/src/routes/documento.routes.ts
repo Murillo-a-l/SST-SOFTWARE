@@ -26,7 +26,12 @@ function calcularStatusDocumento(documento: any): string {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    const dataFim = new Date(documento.dataFim);
+    // Garantir formato ISO para evitar problemas de timezone
+    const dataFimStr = documento.dataFim instanceof Date
+        ? documento.dataFim.toISOString().split('T')[0]
+        : String(documento.dataFim).split('T')[0];
+
+    const dataFim = new Date(dataFimStr + 'T00:00:00');
     dataFim.setHours(0, 0, 0, 0);
 
     // Calcular diferença em dias
@@ -48,6 +53,9 @@ router.get('/', async (req, res) => {
         const documentos = await prisma.documentoEmpresa.findMany({
             where: { deletedAt: null },
             orderBy: { dataUpload: 'desc' },
+            include: {
+                tipo: true, // Include DocumentoTipo relation
+            },
         });
 
         // Calcular status de cada documento
@@ -71,6 +79,9 @@ router.get('/:id', async (req, res) => {
             where: {
                 id: Number(id),
                 deletedAt: null
+            },
+            include: {
+                tipo: true, // Include DocumentoTipo relation
             },
         });
 
@@ -206,7 +217,9 @@ router.put('/:id', async (req, res) => {
             dadosSensiveis,
             statusAssinatura,
             requerAssinaturaDeId,
-            solicitadoPorId
+            solicitadoPorId,
+            dataConclusaoAssinatura,
+            observacoesAssinatura
         } = req.body;
 
         // Verificar se documento existe
@@ -258,6 +271,8 @@ router.put('/:id', async (req, res) => {
                 statusAssinatura: statusAssinatura || undefined,
                 requerAssinaturaDeId: requerAssinaturaDeId !== undefined ? (requerAssinaturaDeId ? Number(requerAssinaturaDeId) : null) : undefined,
                 solicitadoPorId: solicitadoPorId !== undefined ? (solicitadoPorId ? Number(solicitadoPorId) : null) : undefined,
+                dataConclusaoAssinatura: dataConclusaoAssinatura !== undefined ? (dataConclusaoAssinatura ? new Date(dataConclusaoAssinatura) : null) : undefined,
+                observacoesAssinatura: observacoesAssinatura !== undefined ? observacoesAssinatura : undefined,
             },
         });
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DocumentoEmpresa, User } from '../../types';
-import { documentoEmpresaService } from '../../services/dbService';
+import { documentoApi, ApiError } from '../../services/apiService';
+import toast from 'react-hot-toast';
 
 interface ModalProps {
     isOpen: boolean;
@@ -57,13 +58,13 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
         }
     };
 
-    const handleSubmit = (action: 'approve' | 'approve_upload' | 'reject') => {
-        let updatedData: Partial<Omit<DocumentoEmpresa, 'id'>>;
+    const handleSubmit = async (action: 'approve' | 'approve_upload' | 'reject') => {
+        let updatedData: any;
 
         switch (action) {
             case 'approve_upload':
                 if (!novaVersaoBase64) {
-                    alert("Por favor, selecione um arquivo para anexar.");
+                    toast.error("Por favor, selecione um arquivo para anexar.");
                     return;
                 }
                 updatedData = {
@@ -80,7 +81,7 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
                 break;
             case 'reject':
                 if (!rejectionReason.trim()) {
-                    alert("A justificativa é obrigatória para rejeitar o documento.");
+                    toast.error("A justificativa é obrigatória para rejeitar o documento.");
                     return;
                 }
                 updatedData = {
@@ -93,10 +94,18 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
                 return;
         }
 
-        documentoEmpresaService.update(documento.id, updatedData);
-        alert("Ação registrada com sucesso!");
-        onActionSuccess();
-        onClose();
+        try {
+            await documentoApi.update(documento.id, updatedData);
+            toast.success("Ação registrada com sucesso!");
+            onActionSuccess();
+            onClose();
+        } catch (error) {
+            if (error instanceof ApiError) {
+                toast.error(error.message);
+            } else {
+                toast.error('Erro ao registrar ação. Tente novamente.');
+            }
+        }
     };
 
 
