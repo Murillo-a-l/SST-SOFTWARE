@@ -68,8 +68,16 @@ const SignatureStatusBadge: React.FC<{ status: SignatureStatus, assignedTo?: str
 };
 
 // Action Menu Component
-const ActionMenu: React.FC<{ item: DocumentoEmpresa | Pasta, onEdit: () => void, onDownload?: () => void, onSetStatus?: (status: DocumentoStatus) => void, onDelete: () => void, onSign?: () => void, currentUser?: User }> =
-({ item, onEdit, onDownload, onSetStatus, onDelete, onSign, currentUser }) => {
+const ActionMenu: React.FC<{
+    item: DocumentoEmpresa | Pasta,
+    onEdit: () => void,
+    onDownload?: () => void,
+    onDownloadSigned?: () => void,
+    onSetStatus?: (status: DocumentoStatus) => void,
+    onDelete: () => void,
+    onSign?: () => void,
+    currentUser?: User
+}> = ({ item, onEdit, onDownload, onDownloadSigned, onSetStatus, onDelete, onSign, currentUser }) => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -86,6 +94,7 @@ const ActionMenu: React.FC<{ item: DocumentoEmpresa | Pasta, onEdit: () => void,
     const isFolder = 'parentId' in item;
     const documento = !isFolder ? (item as DocumentoEmpresa) : null;
     const showSignButton = !isFolder && onSign && documento?.statusAssinatura === 'PENDENTE' && documento?.requerAssinaturaDeId === currentUser?.id;
+    const hasSignedVersion = !isFolder && documento?.arquivoAssinadoBase64;
 
     return (
         <div className="relative" ref={menuRef}>
@@ -93,10 +102,12 @@ const ActionMenu: React.FC<{ item: DocumentoEmpresa | Pasta, onEdit: () => void,
                 <DotsVerticalIcon />
             </button>
             {isOpen && (
-                <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                     <div className="py-1" role="menu" aria-orientation="vertical">
                         <MenuItem onClick={() => { onEdit(); setIsOpen(false); }}>{isFolder ? 'Renomear' : 'Editar'}</MenuItem>
-                        {!isFolder && onDownload && <MenuItem onClick={() => { onDownload(); setIsOpen(false); }}>Baixar</MenuItem>}
+                        {!isFolder && onDownload && !hasSignedVersion && <MenuItem onClick={() => { onDownload(); setIsOpen(false); }}>📄 Baixar</MenuItem>}
+                        {!isFolder && onDownload && hasSignedVersion && <MenuItem onClick={() => { onDownload(); setIsOpen(false); }}>📄 Baixar Original</MenuItem>}
+                        {!isFolder && hasSignedVersion && onDownloadSigned && <MenuItem onClick={() => { onDownloadSigned(); setIsOpen(false); }}>✅ Baixar Assinado</MenuItem>}
                         {showSignButton && <MenuItem onClick={() => { onSign!(); setIsOpen(false); }} className="text-blue-600 hover:bg-blue-50 hover:text-blue-800">✍️ Assinar Documento</MenuItem>}
                         {!isFolder && onSetStatus && item.status !== 'ENCERRADO' && <MenuItem onClick={() => { onSetStatus('ENCERRADO'); setIsOpen(false); }}>Encerrar</MenuItem>}
                         <MenuItem onClick={() => { onDelete(); setIsOpen(false); }} className="text-red-600 hover:bg-red-50 hover:text-red-800">Excluir</MenuItem>
@@ -189,20 +200,27 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
         }
     };
 
-    const handleDownload = (doc: DocumentoEmpresa) => {
+    const handleDownload = (doc: DocumentoEmpresa, useSignedVersion: boolean = false) => {
         const performDownload = () => {
             try {
+                // Use signed version if requested and available
+                const fileData = useSignedVersion && doc.arquivoAssinadoBase64
+                    ? doc.arquivoAssinadoBase64
+                    : doc.arquivoBase64;
+
                 // Ensure base64 data has proper data URL format
-                let dataUrl = doc.arquivoBase64;
+                let dataUrl = fileData;
 
                 // If the base64 doesn't start with "data:", add the proper prefix
                 if (!dataUrl.startsWith('data:')) {
                     dataUrl = `data:application/octet-stream;base64,${dataUrl}`;
                 }
 
+                const fileName = useSignedVersion ? `[ASSINADO] ${doc.nome}` : doc.nome;
+
                 const link = document.createElement('a');
                 link.href = dataUrl;
-                link.download = doc.nome;
+                link.download = fileName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -227,7 +245,12 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
         }
     };
     
-    const formatDate = (dateStr: string | null) => dateStr ? new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+    const formatDate = (dateStr: string | null) => {
+        if (!dateStr) return '—';
+        // Extrair apenas YYYY-MM-DD para evitar problemas com ISO completo
+        const dataStr = dateStr.split('T')[0];
+        return new Date(dataStr + 'T00:00:00').toLocaleDateString('pt-BR');
+    };
     const breadcrumbs = getBreadcrumbs();
 
     return (
@@ -250,14 +273,28 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                 </div>
             </div>
             
-            <div className="mb-4 text-sm text-gray-600">
-                <button onClick={() => setCurrentFolderId(null)} className="hover:underline">Raiz</button>
-                {breadcrumbs.map(crumb => (
-                    <span key={crumb.id}>
-                        <span className="mx-1">/</span>
-                        <button onClick={() => setCurrentFolderId(crumb.id)} className="hover:underline">{crumb.nome}</button>
-                    </span>
-                ))}
+            {/* Botão Voltar e Breadcrumb */}
+            <div className="mb-4 flex items-center gap-3">
+                {currentFolderId !== null && (
+                    <button
+                        onClick={() => {
+                            const currentCrumb = breadcrumbs.find(c => c.id === currentFolderId);
+                            setCurrentFolderId(currentCrumb?.parentId || null);
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-medium text-gray-700 transition"
+                    >
+                        ⬅️ Voltar
+                    </button>
+                )}
+                <div className="text-sm text-gray-600">
+                    <button onClick={() => setCurrentFolderId(null)} className="hover:underline">Raiz</button>
+                    {breadcrumbs.map(crumb => (
+                        <span key={crumb.id}>
+                            <span className="mx-1">/</span>
+                            <button onClick={() => setCurrentFolderId(crumb.id)} className="hover:underline">{crumb.nome}</button>
+                        </span>
+                    ))}
+                </div>
             </div>
 
             <div className="overflow-auto flex-grow border rounded-lg">
@@ -304,7 +341,8 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                                             item={item}
                                             onEdit={() => isFolder ? onAddPasta(empresa.id, item.parentId, item) : onEditDocument(empresa, item.pastaId, item)}
                                             onDelete={() => handleDelete(item)}
-                                            onDownload={!isFolder ? () => handleDownload(item) : undefined}
+                                            onDownload={!isFolder ? () => handleDownload(item, false) : undefined}
+                                            onDownloadSigned={!isFolder ? () => handleDownload(item, true) : undefined}
                                             onSetStatus={!isFolder ? (status) => handleSetStatus(item, status) : undefined}
                                             onSign={onOpenSignature && !isFolder ? () => onOpenSignature(item as DocumentoEmpresa) : undefined}
                                             currentUser={currentUser}

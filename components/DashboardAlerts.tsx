@@ -16,10 +16,13 @@ const getDaysDiff = (dataFim: string | null): { diff: number; text: string } => 
 
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    const dataVenc = new Date(dataFim + 'T00:00:00');
+
+    // Extrair apenas YYYY-MM-DD para evitar problemas com ISO completo
+    const dataStr = dataFim.split('T')[0];  // "2025-12-01"
+    const dataVenc = new Date(dataStr + 'T00:00:00');
     const diffTime = dataVenc.getTime() - hoje.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) return { diff: diffDays, text: `Vencido há ${Math.abs(diffDays)} dias` };
     if (diffDays === 0) return { diff: diffDays, text: `Vence hoje` };
     return { diff: diffDays, text: `Vence em ${diffDays} dias` };

@@ -209,6 +209,7 @@ router.put('/:id', async (req, res) => {
             nome,
             arquivoUrl,
             arquivoBase64,
+            arquivoAssinadoBase64,
             observacoes,
             temValidade,
             dataInicio,
@@ -253,6 +254,7 @@ router.put('/:id', async (req, res) => {
 
         // Handle arquivo (accept both base64 and url)
         const arquivo = arquivoBase64 || arquivoUrl;
+        const arquivoAssinado = arquivoAssinadoBase64;
 
         const documento = await prisma.documentoEmpresa.update({
             where: { id: Number(id) },
@@ -262,6 +264,7 @@ router.put('/:id', async (req, res) => {
                 tipoId: finalTipoId ? Number(finalTipoId) : undefined,
                 nome: nome || undefined,
                 arquivoUrl: arquivo || undefined,
+                arquivoAssinadoUrl: arquivoAssinado !== undefined ? arquivoAssinado : undefined,
                 observacoes: observacoes !== undefined ? observacoes : undefined,
                 temValidade: temValidade !== undefined ? temValidade : undefined,
                 dataInicio: dataInicio !== undefined ? (dataInicio ? new Date(dataInicio) : null) : undefined,

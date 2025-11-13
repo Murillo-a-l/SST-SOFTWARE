@@ -468,6 +468,7 @@ export const documentoApi = {
     return docs.map(doc => ({
       ...doc,
       arquivoBase64: doc.arquivoUrl,
+      arquivoAssinadoBase64: doc.arquivoAssinadoUrl || null,
       tipo: doc.tipo?.nome || doc.tipo, // Handle both nested and flat tipo
     }));
   },
@@ -481,6 +482,7 @@ export const documentoApi = {
     return {
       ...doc,
       arquivoBase64: doc.arquivoUrl,
+      arquivoAssinadoBase64: doc.arquivoAssinadoUrl || null,
       tipo: doc.tipo?.nome || doc.tipo,
     };
   },
