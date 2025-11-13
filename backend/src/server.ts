@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import prisma from './config/database';
+import { ensureSchemaUpdated } from './config/ensureSchema';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -40,13 +41,16 @@ process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`
 🚀 Server is running on port ${PORT}
 📊 Environment: ${process.env.NODE_ENV || 'development'}
 🔗 API: http://localhost:${PORT}/api
 ❤️  Health: http://localhost:${PORT}/api/health
   `);
+
+  // Verificar e atualizar schema do banco de dados
+  await ensureSchemaUpdated();
 });
 
 export default app;
