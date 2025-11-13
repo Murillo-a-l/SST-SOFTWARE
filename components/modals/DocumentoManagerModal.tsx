@@ -19,6 +19,7 @@ const initialFormState = {
     nome: '',
     tipo: 'Outro',
     arquivoBase64: '',
+    tipoArquivo: '',
     observacoes: '',
     temValidade: false,
     dataInicio: null as string | null,
@@ -57,6 +58,7 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
                     nome: documentoToEdit.nome,
                     tipo: documentoToEdit.tipo,
                     arquivoBase64: documentoToEdit.arquivoBase64,
+                    tipoArquivo: documentoToEdit.tipoArquivo || '',
                     observacoes: documentoToEdit.observacoes || '',
                     temValidade: documentoToEdit.temValidade,
                     dataInicio: documentoToEdit.dataInicio,
@@ -86,7 +88,8 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
             setFormData(prev => ({
                 ...prev,
                 nome: prev.nome || file.name,
-                arquivoBase64: base64
+                arquivoBase64: base64,
+                tipoArquivo: file.type || 'application/octet-stream'
             }));
         } catch (error) {
             console.error("Error converting file to Base64:", error);
@@ -102,9 +105,9 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
 
         if (name === 'tipo') {
             const selectedTipo = tipos.find(t => t.nome === value);
-            setFormData(prev => ({ 
-                ...prev, 
-                tipo: value, 
+            setFormData(prev => ({
+                ...prev,
+                tipo: value,
                 validadeMeses: isEditing ? prev.validadeMeses : (selectedTipo?.validadeMesesPadrao ?? null)
             }));
         } else if (name === 'requerAssinatura') {
@@ -113,11 +116,17 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
                 requerAssinatura: checked,
                 requerAssinaturaDeId: checked ? prev.requerAssinaturaDeId : null
             }))
-        }
-        else {
-            setFormData(prev => ({ 
-                ...prev, 
-                [name]: type === 'checkbox' ? checked : value 
+        } else if (name === 'validadeMeses') {
+            // Converter para número ou null
+            const numValue = value === '' ? null : Number(value);
+            setFormData(prev => ({
+                ...prev,
+                validadeMeses: numValue
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
             }));
         }
     };
@@ -150,6 +159,7 @@ export const DocumentoManagerModal: React.FC<ModalProps> = (props) => {
                 tipo: formData.tipo,
                 nome: formData.nome,
                 arquivoBase64: formData.arquivoBase64,
+                tipoArquivo: formData.tipoArquivo || 'application/octet-stream',
                 observacoes: formData.observacoes || undefined,
                 temValidade: formData.temValidade,
                 dataInicio: formData.dataInicio,
