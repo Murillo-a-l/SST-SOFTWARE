@@ -63,7 +63,7 @@ export const PcmsoTab: React.FC<PcmsoTabProps> = (props) => {
 
     const handleGeneratePcmso = () => {
         if (!selectedEmpresa) {
-            alert("Por favor, selecione uma empresa para gerar o PCMSO.");
+            toast.error("Por favor, selecione uma empresa para gerar o PCMSO.");
             return;
         }
 
@@ -89,7 +89,7 @@ export const PcmsoTab: React.FC<PcmsoTabProps> = (props) => {
 
     const handleLinkResource = () => {
         if (!selectedCargoId || selectedResourceId === null) {
-            alert("Selecione um cargo e um recurso da biblioteca para vincular.");
+            toast.error("Selecione um cargo e um recurso da biblioteca para vincular.");
             return;
         }
 

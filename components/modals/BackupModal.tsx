@@ -13,7 +13,7 @@ export const BackupModal: React.FC<ModalProps> = ({ isOpen, onClose, onDataChang
 
     const handleExport = () => {
         exportBackup();
-        alert("Backup exportado com sucesso! Verifique sua pasta de downloads.");
+        toast.error("Backup exportado com sucesso! Verifique sua pasta de downloads.");
     };
 
     const handleImportClick = () => {
@@ -29,11 +29,11 @@ export const BackupModal: React.FC<ModalProps> = ({ isOpen, onClose, onDataChang
         setIsRestoring(true);
         try {
             await importBackup(file);
-            alert("Backup restaurado com sucesso! A aplicação será atualizada.");
+            toast.error("Backup restaurado com sucesso! A aplicação será atualizada.");
             onDataChange();
             onClose();
         } catch (error: any) {
-            alert(`Erro ao restaurar backup: ${error.message}`);
+            toast.error(`Erro ao restaurar backup: ${error.message}`);
         } finally {
             setIsRestoring(false);
             // Reset file input

@@ -109,7 +109,7 @@ export const GerarRelatorioModal: React.FC<ModalProps> = ({ isOpen, onClose, dat
         const filteredData = getFilteredData();
 
         if (filteredData.length === 0) {
-            alert("Nenhum dado encontrado para os filtros selecionados.");
+            toast.error("Nenhum dado encontrado para os filtros selecionados.");
             return;
         }
         

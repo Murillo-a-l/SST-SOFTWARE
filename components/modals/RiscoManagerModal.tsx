@@ -34,7 +34,7 @@ export const RiscoManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onDat
     
     const handleSave = () => {
         if (!formData.nome || !formData.tipo) {
-            alert('Nome e Tipo do risco são obrigatórios.');
+            toast.error('Nome e Tipo do risco são obrigatórios.');
             return;
         }
         if (selected) {

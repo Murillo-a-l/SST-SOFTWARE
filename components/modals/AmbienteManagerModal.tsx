@@ -33,7 +33,7 @@ export const AmbienteManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, on
     
     const handleSave = () => {
         if (!formData.nome) {
-            alert('O nome do ambiente é obrigatório.');
+            toast.error('O nome do ambiente é obrigatório.');
             return;
         }
         if (selected) {

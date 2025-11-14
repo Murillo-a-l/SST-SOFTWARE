@@ -31,10 +31,10 @@ export interface Empresa {
   contatoEmail?: string;
   contatoTelefone?: string;
   // PCMSO Config integrated here
-  medico_nome: string;
-  medico_crm: string;
-  inicio_validade: string;
-  revisar_ate: string;
+  medico_nome?: string;
+  medico_crm?: string;
+  inicio_validade?: string;
+  revisar_ate?: string;
   // Financeiro
   diaPadraoVencimento?: number;
 }

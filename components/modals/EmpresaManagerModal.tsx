@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { empresaApi, ApiError } from '../../services/apiService';
 import { Empresa } from '../../types';
+import { consultarCNPJ, getSituacaoMessage, CNPJValidationResult } from '../../services/cnpjValidationService';
 
 interface ModalProps {
     isOpen: boolean;
@@ -58,6 +59,7 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
     const [formData, setFormData] = useState(initialFormState);
     const [isFetchingCnpj, setIsFetchingCnpj] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [cnpjValidation, setCnpjValidation] = useState<CNPJValidationResult | null>(null);
 
     const possibleMatrices = (empresas || []).filter(e => !e.matrizId && e.id !== empresa?.id);
 
@@ -90,35 +92,51 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
     const handleCnpjBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
         const cnpj = e.target.value.replace(/\D/g, '');
         if (cnpj.length !== 14) {
+            setCnpjValidation(null);
             return;
         }
 
         setIsFetchingCnpj(true);
         try {
-            const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                throw new Error(errorData?.message || 'CNPJ não encontrado ou inválido.');
-            }
-            const data = await response.json();
+            const validation = await consultarCNPJ(cnpj);
+            setCnpjValidation(validation);
 
-            setFormData(prev => ({
-                ...prev,
-                razaoSocial: data.razao_social || prev.razaoSocial,
-                nomeFantasia: data.nome_fantasia || prev.nomeFantasia,
-                endereco: [
-                    data.logradouro,
-                    data.numero,
-                    data.complemento,
-                    data.bairro,
-                    `${data.municipio} - ${data.uf}`,
-                    `CEP: ${data.cep}`
-                ].filter(Boolean).join(', ') || prev.endereco,
-                contatoTelefone: formatPhone(data.ddd_telefone_1 || '') || prev.contatoTelefone,
-            }));
-            
+            if (validation.error) {
+                toast.error(`Erro ao validar CNPJ: ${validation.error}`);
+                return;
+            }
+
+            // Mostrar alerta se empresa não está ativa
+            if (validation.situacao !== 'ATIVA') {
+                const situacaoInfo = getSituacaoMessage(validation.situacao);
+                toast.error(`${situacaoInfo.icon} ${situacaoInfo.message}`, {
+                    duration: 6000,
+                });
+            } else {
+                toast.success('✅ Empresa ATIVA na Receita Federal');
+            }
+
+            // Preencher dados se válido
+            if (validation.valid || validation.razaoSocial) {
+                setFormData(prev => ({
+                    ...prev,
+                    razaoSocial: validation.razaoSocial || prev.razaoSocial,
+                    nomeFantasia: validation.nomeFantasia || prev.nomeFantasia,
+                    endereco: validation.endereco ? [
+                        validation.endereco.logradouro,
+                        validation.endereco.numero,
+                        validation.endereco.complemento,
+                        validation.endereco.bairro,
+                        `${validation.endereco.municipio} - ${validation.endereco.uf}`,
+                        `CEP: ${validation.endereco.cep}`
+                    ].filter(Boolean).join(', ') : prev.endereco,
+                    contatoTelefone: formatPhone(validation.telefone || '') || prev.contatoTelefone,
+                    contatoEmail: validation.email || prev.contatoEmail,
+                }));
+            }
         } catch (error: any) {
-            toast.error(`Erro ao buscar CNPJ: ${error.message}`);
+            toast.error(`Erro ao validar CNPJ: ${error.message}`);
+            setCnpjValidation(null);
         } finally {
             setIsFetchingCnpj(false);
         }
@@ -130,10 +148,7 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
             return;
         }
 
-        if (!formData.medico_nome || !formData.medico_crm || !formData.inicio_validade || !formData.revisar_ate) {
-            toast.error("Médico, CRM, Início de Validade e Revisar Até são obrigatórios.");
-            return;
-        }
+        // Campos de médico são opcionais agora
 
         setIsSaving(true);
 
@@ -148,10 +163,10 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
                 contatoNome: formData.contatoNome || undefined,
                 contatoEmail: formData.contatoEmail || undefined,
                 contatoTelefone: formData.contatoTelefone || undefined,
-                medicoNome: formData.medico_nome,
-                medicoCrm: formData.medico_crm,
-                inicioValidade: formData.inicio_validade,
-                revisarAte: formData.revisar_ate,
+                medicoNome: formData.medico_nome || undefined,
+                medicoCrm: formData.medico_crm || undefined,
+                inicioValidade: formData.inicio_validade || undefined,
+                revisarAte: formData.revisar_ate || undefined,
                 diaPadraoVencimento: formData.diaPadraoVencimento ? Number(formData.diaPadraoVencimento) : undefined,
             };
 
@@ -205,6 +220,27 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
                                     />
                                     {isFetchingCnpj && <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-500 animate-pulse">Buscando...</span>}
                                 </div>
+                                {cnpjValidation && !isFetchingCnpj && (
+                                    <div className={`mt-2 p-2 rounded-md border ${
+                                        cnpjValidation.situacao === 'ATIVA' ? 'bg-green-50 border-green-200' :
+                                        cnpjValidation.situacao === 'SUSPENSA' || cnpjValidation.situacao === 'INAPTA' ? 'bg-yellow-50 border-yellow-200' :
+                                        'bg-red-50 border-red-200'
+                                    }`}>
+                                        <p className={`text-xs font-medium ${
+                                            cnpjValidation.situacao === 'ATIVA' ? 'text-green-800' :
+                                            cnpjValidation.situacao === 'SUSPENSA' || cnpjValidation.situacao === 'INAPTA' ? 'text-yellow-800' :
+                                            'text-red-800'
+                                        }`}>
+                                            {getSituacaoMessage(cnpjValidation.situacao).icon} {getSituacaoMessage(cnpjValidation.situacao).message}
+                                        </p>
+                                        {cnpjValidation.dataSituacao && (
+                                            <p className="text-xs text-gray-600 mt-1">Data da situação: {new Date(cnpjValidation.dataSituacao).toLocaleDateString('pt-BR')}</p>
+                                        )}
+                                        {cnpjValidation.motivoSituacao && cnpjValidation.situacao !== 'ATIVA' && (
+                                            <p className="text-xs text-gray-600 mt-1">Motivo: {cnpjValidation.motivoSituacao}</p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <InputField label="Razão Social*" name="razaoSocial" value={formData.razaoSocial} onChange={handleChange} />
                             <InputField label="Nome Fantasia*" name="nomeFantasia" value={formData.nomeFantasia} onChange={handleChange} />
@@ -240,12 +276,12 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
                     </fieldset>
                     
                     <fieldset className="border p-4 rounded-md">
-                        <legend className="font-semibold px-2">Configuração PCMSO</legend>
+                        <legend className="font-semibold px-2">Configuração PCMSO (Opcional)</legend>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField label="Médico Responsável*" name="medico_nome" value={formData.medico_nome} onChange={handleChange} />
-                            <InputField label="CRM do Médico*" name="medico_crm" value={formData.medico_crm} onChange={handleChange} />
-                            <InputField label="Início da Validade*" name="inicio_validade" type="date" value={formData.inicio_validade} onChange={handleChange} />
-                            <InputField label="Revisar Até*" name="revisar_ate" type="date" value={formData.revisar_ate} onChange={handleChange} />
+                            <InputField label="Médico Responsável" name="medico_nome" value={formData.medico_nome || ''} onChange={handleChange} />
+                            <InputField label="CRM do Médico" name="medico_crm" value={formData.medico_crm || ''} onChange={handleChange} />
+                            <InputField label="Início da Validade" name="inicio_validade" type="date" value={formData.inicio_validade || ''} onChange={handleChange} />
+                            <InputField label="Revisar Até" name="revisar_ate" type="date" value={formData.revisar_ate || ''} onChange={handleChange} />
                         </div>
                     </fieldset>
 

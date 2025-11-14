@@ -59,28 +59,28 @@ export const ImportarPlanilhaModal: React.FC<ModalProps> = ({ isOpen, onClose, o
 
     const handleImport = () => {
         if (!selectedEmpresaId) {
-            alert("Por favor, selecione para qual empresa você está importando os dados.");
+            toast.error("Por favor, selecione para qual empresa você está importando os dados.");
             return;
         }
         if (!pastedText.trim()) {
-            alert("Por favor, cole os dados da sua planilha.");
+            toast.error("Por favor, cole os dados da sua planilha.");
             return;
         }
         setIsImporting(true);
         try {
             const parsedData = parsePastedData(pastedText);
             if(parsedData.length === 0) {
-                alert("Nenhum dado válido encontrado. Verifique se copiou os cabeçalhos e pelo menos uma linha de dados.");
+                toast.error("Nenhum dado válido encontrado. Verifique se copiou os cabeçalhos e pelo menos uma linha de dados.");
                 setIsImporting(false);
                 return;
             }
             // FIX: Use processImportedData from dbService for correct ID generation and to avoid code duplication.
             const stats = dbService.processImportedData(parsedData, Number(selectedEmpresaId));
-            alert(`Importação concluída!\n\n- ${stats.newFuncCount} novos funcionários cadastrados.\n- ${stats.updatedFuncCount} funcionários atualizados.\n- ${stats.newExamsCount} novos exames adicionados ao histórico.`);
+            toast.error(`Importação concluída!\n\n- ${stats.newFuncCount} novos funcionários cadastrados.\n- ${stats.updatedFuncCount} funcionários atualizados.\n- ${stats.newExamsCount} novos exames adicionados ao histórico.`);
             onImportSuccess();
             onClose();
         } catch (error: any) {
-            alert(`Erro na importação: ${error.message}`);
+            toast.error(`Erro na importação: ${error.message}`);
         } finally {
             setIsImporting(false);
             setPastedText('');
