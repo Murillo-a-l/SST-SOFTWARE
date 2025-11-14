@@ -47,15 +47,16 @@ cd backend
 # Install dependencies
 npm install
 
-# Setup database (first time only)
+# Setup database (first time only) - OPTION 1: Automated setup
+npm run setup  # Interactive script that creates DB, runs migrations, and seeds data
+
+# OPTION 2: Manual setup
 # 1. Create PostgreSQL database: CREATE DATABASE occupational_health;
 # 2. Copy .env.example to .env and configure DATABASE_URL
 # 3. IMPORTANT: Merge schema-extra.prisma into schema.prisma (see note below)
-# 4. Run migrations
+# 4. Run migrations and seed
 npm run prisma:generate
 npm run prisma:migrate
-
-# Seed database with initial data (admin user, document types)
 npm run prisma:seed
 
 # Run development server with hot reload (runs on http://localhost:3001)
