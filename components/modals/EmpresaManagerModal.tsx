@@ -130,10 +130,7 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
             return;
         }
 
-        if (!formData.medico_nome || !formData.medico_crm || !formData.inicio_validade || !formData.revisar_ate) {
-            toast.error("Médico, CRM, Início de Validade e Revisar Até são obrigatórios.");
-            return;
-        }
+        // Campos de médico são opcionais agora
 
         setIsSaving(true);
 
@@ -148,10 +145,10 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
                 contatoNome: formData.contatoNome || undefined,
                 contatoEmail: formData.contatoEmail || undefined,
                 contatoTelefone: formData.contatoTelefone || undefined,
-                medicoNome: formData.medico_nome,
-                medicoCrm: formData.medico_crm,
-                inicioValidade: formData.inicio_validade,
-                revisarAte: formData.revisar_ate,
+                medicoNome: formData.medico_nome || undefined,
+                medicoCrm: formData.medico_crm || undefined,
+                inicioValidade: formData.inicio_validade || undefined,
+                revisarAte: formData.revisar_ate || undefined,
                 diaPadraoVencimento: formData.diaPadraoVencimento ? Number(formData.diaPadraoVencimento) : undefined,
             };
 
@@ -240,12 +237,12 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
                     </fieldset>
                     
                     <fieldset className="border p-4 rounded-md">
-                        <legend className="font-semibold px-2">Configuração PCMSO</legend>
+                        <legend className="font-semibold px-2">Configuração PCMSO (Opcional)</legend>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField label="Médico Responsável*" name="medico_nome" value={formData.medico_nome} onChange={handleChange} />
-                            <InputField label="CRM do Médico*" name="medico_crm" value={formData.medico_crm} onChange={handleChange} />
-                            <InputField label="Início da Validade*" name="inicio_validade" type="date" value={formData.inicio_validade} onChange={handleChange} />
-                            <InputField label="Revisar Até*" name="revisar_ate" type="date" value={formData.revisar_ate} onChange={handleChange} />
+                            <InputField label="Médico Responsável" name="medico_nome" value={formData.medico_nome || ''} onChange={handleChange} />
+                            <InputField label="CRM do Médico" name="medico_crm" value={formData.medico_crm || ''} onChange={handleChange} />
+                            <InputField label="Início da Validade" name="inicio_validade" type="date" value={formData.inicio_validade || ''} onChange={handleChange} />
+                            <InputField label="Revisar Até" name="revisar_ate" type="date" value={formData.revisar_ate || ''} onChange={handleChange} />
                         </div>
                     </fieldset>
 
