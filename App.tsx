@@ -422,7 +422,7 @@ const App: React.FC = () => {
         dbService.mesclarFuncionarios(primaryId, secondaryIds);
         reloadData();
         handleCloseAllModals();
-        alert("Funcionários mesclados com sucesso!");
+        toast.success("Funcionários mesclados com sucesso!");
     };
 
     const handleEditEmpresa = (empresa: Empresa) => {
@@ -466,10 +466,10 @@ const App: React.FC = () => {
             onConfirm: () => {
                 const updatedFunc = dbService.funcionarioService.update(id, { ativo: false });
                 if (updatedFunc) {
-                    alert("Funcionário desativado com sucesso.");
+                    toast.success("Funcionário desativado com sucesso.");
                     reloadData();
                 } else {
-                    alert("Erro ao desativar o funcionário.");
+                    toast.error("Erro ao desativar o funcionário.");
                 }
                 setConfirmation(null);
             }
@@ -486,10 +486,10 @@ const App: React.FC = () => {
             onConfirm: () => {
                 const success = dbService.funcionarioService.remove(id);
                  if (success) {
-                    alert(`Funcionário "${nome}" excluído com sucesso.`);
+                    toast.success(`Funcionário "${nome}" excluído com sucesso.`);
                     reloadData();
                 } else {
-                    alert("Erro ao excluir o funcionário.");
+                    toast.error("Erro ao excluir o funcionário.");
                 }
                 setConfirmation(null);
             }
@@ -505,10 +505,10 @@ const App: React.FC = () => {
             onConfirm: () => {
                 const updatedFunc = dbService.funcionarioService.update(id, { ativo: true });
                 if (updatedFunc) {
-                    alert("Funcionário reativado com sucesso.");
+                    toast.success("Funcionário reativado com sucesso.");
                     reloadData();
                 } else {
-                    alert("Erro ao reativar o funcionário.");
+                    toast.error("Erro ao reativar o funcionário.");
                 }
                 setConfirmation(null);
             }

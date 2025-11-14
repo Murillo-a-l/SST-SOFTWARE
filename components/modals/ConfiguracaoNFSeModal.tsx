@@ -49,7 +49,7 @@ export const ConfiguracaoNFSeModal: React.FC<ConfiguracaoNFSeModalProps> = ({ is
             });
 
             if (response.status === 401) {
-                alert('Sessão expirada. Por favor, faça login novamente.');
+                toast.error('Sessão expirada. Por favor, faça login novamente.');
                 window.location.href = '/';
                 return;
             }
@@ -70,12 +70,12 @@ export const ConfiguracaoNFSeModal: React.FC<ConfiguracaoNFSeModalProps> = ({ is
 
     const handleSave = async () => {
         if (!config.login || !config.cidade) {
-            alert('Preencha pelo menos o Login (CNPJ) e o Código da Cidade');
+            toast.error('Preencha pelo menos o Login (CNPJ) e o Código da Cidade');
             return;
         }
 
         if (!senhaAlterada && config.id) {
-            alert('Altere a senha para salvar ou mantenha a atual.');
+            toast.error('Altere a senha para salvar ou mantenha a atual.');
             return;
         }
 
@@ -106,7 +106,7 @@ export const ConfiguracaoNFSeModal: React.FC<ConfiguracaoNFSeModalProps> = ({ is
             });
 
             if (response.status === 401) {
-                alert('Sessão expirada. Por favor, faça login novamente.');
+                toast.error('Sessão expirada. Por favor, faça login novamente.');
                 window.location.href = '/';
                 return;
             }
@@ -114,15 +114,15 @@ export const ConfiguracaoNFSeModal: React.FC<ConfiguracaoNFSeModalProps> = ({ is
             const data = await response.json();
 
             if (response.ok) {
-                alert(data.message || 'Configuração salva com sucesso!');
+                toast.error(data.message || 'Configuração salva com sucesso!');
                 onSaveSuccess();
                 onClose();
             } else {
-                alert(`Erro: ${data.message}`);
+                toast.error(`Erro: ${data.message}`);
             }
         } catch (error: any) {
             console.error('Erro ao salvar configuração:', error);
-            alert(`Erro ao salvar configuração: ${error.message}`);
+            toast.error(`Erro ao salvar configuração: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -130,7 +130,7 @@ export const ConfiguracaoNFSeModal: React.FC<ConfiguracaoNFSeModalProps> = ({ is
 
     const handleTest = async () => {
         if (!config.login || !config.senha || !config.cidade) {
-            alert('Preencha Login, Senha e Código da Cidade para testar');
+            toast.error('Preencha Login, Senha e Código da Cidade para testar');
             return;
         }
 
@@ -154,7 +154,7 @@ export const ConfiguracaoNFSeModal: React.FC<ConfiguracaoNFSeModalProps> = ({ is
             });
 
             if (response.status === 401) {
-                alert('Sessão expirada. Por favor, faça login novamente.');
+                toast.error('Sessão expirada. Por favor, faça login novamente.');
                 window.location.href = '/';
                 return;
             }

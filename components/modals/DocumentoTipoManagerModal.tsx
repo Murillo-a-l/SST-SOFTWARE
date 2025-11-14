@@ -33,7 +33,7 @@ export const DocumentoTipoManagerModal: React.FC<ModalProps> = ({ isOpen, onClos
     
     const handleSave = () => {
         if (!formData.nome || !formData.alertaDias) {
-            alert('Nome e Dias para Alerta são obrigatórios.');
+            toast.error('Nome e Dias para Alerta são obrigatórios.');
             return;
         }
         const dataToSave = {

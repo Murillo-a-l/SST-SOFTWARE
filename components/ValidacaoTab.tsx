@@ -27,7 +27,7 @@ export const ValidacaoTab: React.FC<ValidacaoTabProps> = ({ funcionarios, exames
     if (funcionarioToCorrect) {
       onCorrect(funcionarioToCorrect);
     } else {
-      alert("Funcionário não encontrado. Tente atualizar a lista.");
+      toast.error("Funcionário não encontrado. Tente atualizar a lista.");
     }
   };
 

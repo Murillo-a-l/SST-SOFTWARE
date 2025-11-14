@@ -51,7 +51,7 @@ export const GerarRelatorioDocumentosModal: React.FC<ModalProps> = ({ isOpen, on
     const handleGenerate = () => {
         const data = getFilteredData();
         if (data.length === 0) {
-            alert("Nenhum documento encontrado para os filtros selecionados.");
+            toast.error("Nenhum documento encontrado para os filtros selecionados.");
             return;
         }
 

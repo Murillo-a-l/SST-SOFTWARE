@@ -183,7 +183,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                     setConfirmation(null);
                 } catch (error: any) {
                     console.error('Erro ao excluir:', error);
-                    alert(`Erro ao excluir: ${error.message}`);
+                    toast.error(`Erro ao excluir: ${error.message}`);
                     setConfirmation(null);
                 }
             }
@@ -196,7 +196,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
             onDataChange();
         } catch (error: any) {
             console.error('Erro ao atualizar status:', error);
-            alert(`Erro ao atualizar status: ${error.message}`);
+            toast.error(`Erro ao atualizar status: ${error.message}`);
         }
     };
 
@@ -226,7 +226,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                 document.body.removeChild(link);
             } catch (error) {
                 console.error("Error downloading file:", error);
-                alert("Não foi possível fazer o download. O arquivo pode estar corrompido.");
+                toast.error("Não foi possível fazer o download. O arquivo pode estar corrompido.");
             }
         };
 

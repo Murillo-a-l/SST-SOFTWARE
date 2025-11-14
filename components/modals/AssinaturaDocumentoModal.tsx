@@ -39,7 +39,7 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
             setNovaVersaoBase64(base64);
         } catch (error) {
             console.error("Error converting file to Base64:", error);
-            alert("Erro ao processar o arquivo.");
+            toast.error("Erro ao processar o arquivo.");
         } finally {
             setIsProcessing(false);
         }
@@ -54,7 +54,7 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
             link.click();
             document.body.removeChild(link);
         } catch (error) {
-            alert("Não foi possível iniciar o download.");
+            toast.error("Não foi possível iniciar o download.");
         }
     };
 

@@ -42,11 +42,11 @@ export const UserManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onData
     
     const handleSave = () => {
         if (!formData.nome || !formData.username) {
-            alert('Nome e Nome de Usuário são obrigatórios.');
+            toast.error('Nome e Nome de Usuário são obrigatórios.');
             return;
         }
         if (!selectedUser && !formData.password) {
-            alert('A senha é obrigatória para novos usuários.');
+            toast.error('A senha é obrigatória para novos usuários.');
             return;
         }
 
@@ -74,7 +74,7 @@ export const UserManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onData
             // Prevent deleting the last admin
             const admins = users.filter(u => u.role === 'admin');
             if(selectedUser.role === 'admin' && admins.length <= 1) {
-                alert("Não é possível excluir o último administrador do sistema.");
+                toast.error("Não é possível excluir o último administrador do sistema.");
                 return;
             }
             

@@ -32,13 +32,13 @@ export const PeriodicidadeManagerModal: React.FC<ModalProps> = ({ isOpen, onClos
     
     const handleSave = () => {
         if (!formData.cargo_nome || formData.periodicidade_meses <= 0) {
-            alert('Nome do cargo e uma periodicidade válida (meses) são obrigatórios.');
+            toast.error('Nome do cargo e uma periodicidade válida (meses) são obrigatórios.');
             return;
         }
 
         const existing = periodicidadeCargoService.getAll().find(p => p.cargo_nome.toLowerCase() === formData.cargo_nome.toLowerCase() && p.id !== selected?.id);
         if (existing) {
-            alert("Já existe uma periodicidade definida para este cargo. Edite a regra existente.");
+            toast.error("Já existe uma periodicidade definida para este cargo. Edite a regra existente.");
             return;
         }
 
@@ -64,7 +64,7 @@ export const PeriodicidadeManagerModal: React.FC<ModalProps> = ({ isOpen, onClos
     const handleRecalculate = () => {
         if (window.confirm("Deseja recalcular as datas de vencimento de TODOS os exames com base nas regras atuais? Esta ação pode levar alguns segundos.")) {
             const result = recalculateAllVencimentos();
-            alert(`${result.updated} datas de vencimento foram atualizadas.`);
+            toast.success(`${result.updated} datas de vencimento foram atualizadas.`);
             onDataChange();
         }
     };

@@ -33,7 +33,7 @@ export const ExameManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onDat
     
     const handleSave = () => {
         if (!formData.nome_exame) {
-            alert('O nome do exame é obrigatório.');
+            toast.error('O nome do exame é obrigatório.');
             return;
         }
         if (selected) {

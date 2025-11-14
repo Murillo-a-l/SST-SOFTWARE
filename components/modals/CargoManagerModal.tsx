@@ -39,7 +39,7 @@ export const CargoManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onDat
 
     async function handleGenerateDescricao() {
         if (!formData.nome_padronizado) {
-            alert("Preencha o nome do cargo antes de gerar a descrição.");
+            toast.error("Preencha o nome do cargo antes de gerar a descrição.");
             return;
         }
 
@@ -61,7 +61,7 @@ Escreva em português, em parágrafos curtos.`;
 
     async function handleGenerateRiscosEPIs() {
         if (!formData.nome_padronizado) {
-            alert("Preencha o nome do cargo antes de gerar riscos e EPIs.");
+            toast.error("Preencha o nome do cargo antes de gerar riscos e EPIs.");
             return;
         }
 
@@ -83,7 +83,7 @@ Escreva em português, em parágrafos curtos.`;
     
     const handleSave = () => {
         if (!formData.nome_padronizado) {
-            alert('O nome do cargo é obrigatório.');
+            toast.error('O nome do cargo é obrigatório.');
             return;
         }
         if (selectedCargo) {
