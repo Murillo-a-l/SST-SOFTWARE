@@ -59,44 +59,48 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
     };
 
     const handleSubmit = async (action: 'approve' | 'approve_upload' | 'reject') => {
-        let updatedData: any;
-
-        switch (action) {
-            case 'approve_upload':
-                if (!novaVersaoBase64) {
-                    toast.error("Por favor, selecione um arquivo para anexar.");
-                    return;
-                }
-                updatedData = {
-                    arquivoAssinadoBase64: novaVersaoBase64,  // Salva em campo separado
-                    statusAssinatura: 'ASSINADO',
-                    dataConclusaoAssinatura: new Date().toISOString(),
-                };
-                break;
-            case 'approve':
-                 updatedData = {
-                    statusAssinatura: 'ASSINADO',
-                    dataConclusaoAssinatura: new Date().toISOString(),
-                };
-                break;
-            case 'reject':
-                if (!rejectionReason.trim()) {
-                    toast.error("A justificativa é obrigatória para rejeitar o documento.");
-                    return;
-                }
-                updatedData = {
-                    statusAssinatura: 'REJEITADO',
-                    dataConclusaoAssinatura: new Date().toISOString(),
-                    observacoesAssinatura: rejectionReason,
-                };
-                break;
-            default:
-                return;
-        }
-
         try {
-            await documentoApi.update(documento.id, updatedData);
-            toast.success("Ação registrada com sucesso!");
+            switch (action) {
+                case 'approve_upload':
+                    if (!novaVersaoBase64) {
+                        toast.error("Por favor, selecione um arquivo para anexar.");
+                        return;
+                    }
+                    // Cria NOVO documento com assinatura (preserva o original)
+                    await documentoApi.assinar(documento.id, {
+                        arquivoAssinadoBase64: novaVersaoBase64,
+                        statusAssinatura: 'ASSINADO',
+                    });
+                    toast.success("Documento assinado criado com sucesso! O documento original foi preservado.");
+                    break;
+
+                case 'approve':
+                    // Atualiza o documento existente (sem criar novo)
+                    await documentoApi.update(documento.id, {
+                        statusAssinatura: 'ASSINADO',
+                        dataConclusaoAssinatura: new Date().toISOString(),
+                    });
+                    toast.success("Documento marcado como assinado!");
+                    break;
+
+                case 'reject':
+                    if (!rejectionReason.trim()) {
+                        toast.error("A justificativa é obrigatória para rejeitar o documento.");
+                        return;
+                    }
+                    // Atualiza o documento existente (sem criar novo)
+                    await documentoApi.update(documento.id, {
+                        statusAssinatura: 'REJEITADO',
+                        dataConclusaoAssinatura: new Date().toISOString(),
+                        observacoesAssinatura: rejectionReason,
+                    });
+                    toast.success("Documento rejeitado com justificativa.");
+                    break;
+
+                default:
+                    return;
+            }
+
             onActionSuccess();
             onClose();
         } catch (error) {
@@ -123,12 +127,13 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
                         <button onClick={handleDownload} className="text-sm text-indigo-600 hover:underline mt-2">Baixar documento original</button>
                     </div>
 
-                    <div className="border rounded-md p-4">
-                        <h3 className="font-semibold mb-2">Opção 1: Anexar Versão Assinada</h3>
+                    <div className="border rounded-md p-4 bg-green-50">
+                        <h3 className="font-semibold mb-2">📄 Opção 1: Anexar Versão Assinada (Recomendado)</h3>
+                        <p className="text-xs text-gray-600 mb-2">Um novo documento será criado com o arquivo assinado. O documento original será preservado.</p>
                         <input id="file-upload" type="file" onChange={handleFileChange} className="text-sm" />
                         {fileName && <p className="text-xs text-gray-500 mt-1">{fileName}</p>}
                         <button onClick={() => handleSubmit('approve_upload')} disabled={!novaVersaoBase64 || isProcessing} className="mt-2 w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400">
-                            {isProcessing ? 'Processando...' : 'Confirmar e Enviar Documento'}
+                            {isProcessing ? 'Processando...' : 'Criar Documento Assinado'}
                         </button>
                     </div>
                     

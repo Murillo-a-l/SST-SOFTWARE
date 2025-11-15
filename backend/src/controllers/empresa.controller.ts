@@ -19,6 +19,20 @@ function parseDate(dateValue: any): Date | null {
   return date;
 }
 
+/**
+ * Remove campos undefined de um objeto
+ * Prisma não aceita undefined explícito, apenas null ou campo ausente
+ */
+function removeUndefined(obj: any): any {
+  const result: any = {};
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+}
+
 export async function getAllEmpresas(req: Request, res: Response) {
   const empresas = await prisma.empresa.findMany({
     where: { deletedAt: null },
@@ -91,12 +105,15 @@ export async function createEmpresa(req: Request, res: Response) {
   // Remove inicioValidade and revisarAte from data to set them explicitly
   const { inicioValidade: _, revisarAte: __, ...restData } = data;
 
+  // Remove undefined values (Prisma doesn't accept undefined)
+  const cleanData = removeUndefined({
+    ...restData,
+    inicioValidade,
+    revisarAte,
+  });
+
   const empresa = await prisma.empresa.create({
-    data: {
-      ...restData,
-      inicioValidade,
-      revisarAte,
-    },
+    data: cleanData,
   });
 
   res.status(201).json({
@@ -127,13 +144,16 @@ export async function updateEmpresa(req: Request, res: Response) {
   // Remove dates from data to set them explicitly
   const { inicioValidade: _, revisarAte: __, ...restData } = data;
 
+  // Build update data and remove undefined values
+  const updateData = removeUndefined({
+    ...restData,
+    ...(inicioValidade !== undefined && { inicioValidade }),
+    ...(revisarAte !== undefined && { revisarAte }),
+  });
+
   const updated = await prisma.empresa.update({
     where: { id: parseInt(id) },
-    data: {
-      ...restData,
-      ...(inicioValidade !== undefined && { inicioValidade }),
-      ...(revisarAte !== undefined && { revisarAte }),
-    },
+    data: updateData,
   });
 
   res.json({
