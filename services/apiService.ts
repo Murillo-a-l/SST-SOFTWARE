@@ -515,6 +515,17 @@ export const documentoApi = {
       method: 'DELETE',
     });
   },
+
+  /**
+   * Cria novo documento assinado (duplica o original com assinatura)
+   */
+  async assinar(id: number, data: { arquivoAssinadoBase64: string; observacoesAssinatura?: string; statusAssinatura?: string }): Promise<any> {
+    const response = await fetchApi<any>(`/documentos/${id}/assinar`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.data || response;
+  },
 };
 
 // ==================== PASTA API ====================

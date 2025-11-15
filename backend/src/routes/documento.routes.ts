@@ -332,4 +332,65 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// POST /api/documentos/:id/assinar - Criar novo documento com assinatura (duplica o original)
+router.post('/:id/assinar', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            arquivoAssinadoBase64,
+            observacoesAssinatura,
+            statusAssinatura
+        } = req.body;
+
+        // Validação básica
+        if (!arquivoAssinadoBase64) {
+            return res.status(400).json({ message: 'Arquivo assinado é obrigatório' });
+        }
+
+        // Buscar documento original
+        const documentoOriginal = await prisma.documentoEmpresa.findFirst({
+            where: { id: Number(id), deletedAt: null },
+            include: { tipo: true }
+        });
+
+        if (!documentoOriginal) {
+            return res.status(404).json({ message: 'Documento original não encontrado' });
+        }
+
+        // Criar novo documento baseado no original com o arquivo assinado
+        const novoDocumento = await prisma.documentoEmpresa.create({
+            data: {
+                empresaId: documentoOriginal.empresaId,
+                pastaId: documentoOriginal.pastaId,
+                tipoId: documentoOriginal.tipoId,
+                nome: `${documentoOriginal.nome} - ASSINADO`,
+                arquivoUrl: arquivoAssinadoBase64, // Arquivo assinado como arquivo principal
+                arquivoAssinadoUrl: arquivoAssinadoBase64, // Também no campo de assinado
+                observacoes: documentoOriginal.observacoes,
+                temValidade: documentoOriginal.temValidade,
+                dataInicio: documentoOriginal.dataInicio,
+                dataFim: documentoOriginal.dataFim,
+                status: documentoOriginal.status,
+                dadosSensiveis: documentoOriginal.dadosSensiveis,
+                statusAssinatura: statusAssinatura || 'ASSINADO',
+                requerAssinaturaDeId: documentoOriginal.requerAssinaturaDeId,
+                solicitadoPorId: documentoOriginal.solicitadoPorId,
+                dataSolicitacaoAssinatura: documentoOriginal.dataSolicitacaoAssinatura,
+                dataConclusaoAssinatura: new Date(),
+                observacoesAssinatura: observacoesAssinatura || null,
+            },
+            include: { tipo: true }
+        });
+
+        res.status(201).json({
+            status: 'success',
+            message: 'Documento assinado criado com sucesso',
+            data: novoDocumento
+        });
+    } catch (error) {
+        console.error('Error creating signed documento:', error);
+        res.status(500).json({ message: 'Erro ao criar documento assinado' });
+    }
+});
+
 export default router;
