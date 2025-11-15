@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { authenticate } from '../middleware/auth';
 import { IPMWebserviceClient } from '../services/nfse/ipmWebserviceClient';
 import type { NFSeData } from '../services/nfse';
@@ -111,7 +112,7 @@ router.post('/', async (req, res) => {
                 empresaId: Number(empresaId),
                 numero: numero || null,
                 dataEmissao: new Date(dataEmissao),
-                valor: new Prisma.Decimal(valor),
+                valor: new Decimal(valor),
                 descricaoServicos,
                 status: status || 'EM_ELABORACAO',
                 xml: xml || null,
@@ -146,7 +147,7 @@ router.put('/:id', async (req, res) => {
             data: {
                 numero: numero !== undefined ? numero : undefined,
                 dataEmissao: dataEmissao ? new Date(dataEmissao) : undefined,
-                valor: valor !== undefined ? new Prisma.Decimal(valor) : undefined,
+                valor: valor !== undefined ? new Decimal(valor) : undefined,
                 descricaoServicos: descricaoServicos || undefined,
                 status: status || undefined,
                 xml: xml !== undefined ? xml : undefined,
@@ -218,7 +219,7 @@ router.post('/emitir', async (req, res) => {
 
         // Calcular valores
         const valorTotal = servicosPrestados.reduce(
-            (acc, sp) => acc + Number(sp.valorCobrado),
+            (acc: number, sp: any) => acc + Number(sp.valorCobrado),
             0
         );
 
@@ -254,7 +255,7 @@ router.post('/emitir', async (req, res) => {
                 ddd: empresa.telefone?.substring(0, 2) || '',
                 telefone: empresa.telefone?.substring(2) || ''
             },
-            itens: servicosPrestados.map(sp => ({
+            itens: servicosPrestados.map((sp: any) => ({
                 tributaMunicipioPrestador: 1,
                 codigoItemListaServico: sp.servico.codigoServicoLC116 || '107',
                 descritivo: sp.servico.nome,
@@ -282,8 +283,8 @@ router.post('/emitir', async (req, res) => {
                 empresaId: Number(empresaId),
                 numero: response.numeroNfse || null,
                 dataEmissao: dataHoje,
-                valor: new Prisma.Decimal(valorTotal),
-                descricaoServicos: servicosPrestados.map(sp => sp.servico.nome).join(', '),
+                valor: new Decimal(valorTotal),
+                descricaoServicos: servicosPrestados.map((sp: any) => sp.servico.nome).join(', '),
                 status: 'EMITIDA',
                 xml: '', // TODO: armazenar XML gerado
                 pdf: response.linkNfse || null

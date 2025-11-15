@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -73,7 +74,7 @@ router.post('/', async (req, res) => {
                 servicoId: Number(servicoId),
                 funcionarioId: funcionarioId ? Number(funcionarioId) : null,
                 dataRealizacao: new Date(dataRealizacao),
-                valorCobrado: new Prisma.Decimal(valorCobrado),
+                valorCobrado: new Decimal(valorCobrado),
                 quantidade: quantidade || 1,
                 descricaoAdicional: descricaoAdicional || null,
                 status: status || 'PENDENTE',
@@ -106,7 +107,7 @@ router.put('/:id', async (req, res) => {
                 servicoId: servicoId ? Number(servicoId) : undefined,
                 funcionarioId: funcionarioId !== undefined ? (funcionarioId ? Number(funcionarioId) : null) : undefined,
                 dataRealizacao: dataRealizacao ? new Date(dataRealizacao) : undefined,
-                valorCobrado: valorCobrado !== undefined ? new Prisma.Decimal(valorCobrado) : undefined,
+                valorCobrado: valorCobrado !== undefined ? new Decimal(valorCobrado) : undefined,
                 quantidade: quantidade || undefined,
                 descricaoAdicional: descricaoAdicional !== undefined ? descricaoAdicional : undefined,
                 status: status || undefined,
