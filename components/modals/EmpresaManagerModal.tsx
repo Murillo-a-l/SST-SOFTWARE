@@ -22,10 +22,10 @@ const initialFormState: Omit<Empresa, 'id'> = {
     contatoNome: '',
     contatoEmail: '',
     contatoTelefone: '',
-    medico_nome: '',
-    medico_crm: '',
-    inicio_validade: '',
-    revisar_ate: '',
+    medicoNome: '',
+    medicoCrm: '',
+    inicioValidade: '',
+    revisarAte: '',
     diaPadraoVencimento: undefined,
 };
 
@@ -171,10 +171,10 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
             if (formData.contatoNome) dataToSave.contatoNome = formData.contatoNome;
             if (formData.contatoEmail) dataToSave.contatoEmail = formData.contatoEmail;
             if (formData.contatoTelefone) dataToSave.contatoTelefone = formData.contatoTelefone;
-            if (formData.medico_nome) dataToSave.medicoNome = formData.medico_nome;
-            if (formData.medico_crm) dataToSave.medicoCrm = formData.medico_crm;
-            if (formData.inicio_validade) dataToSave.inicioValidade = formData.inicio_validade;
-            if (formData.revisar_ate) dataToSave.revisarAte = formData.revisar_ate;
+            if (formData.medicoNome) dataToSave.medicoNome = formData.medicoNome;
+            if (formData.medicoCrm) dataToSave.medicoCrm = formData.medicoCrm;
+            if (formData.inicioValidade) dataToSave.inicioValidade = formData.inicioValidade;
+            if (formData.revisarAte) dataToSave.revisarAte = formData.revisarAte;
             if (formData.diaPadraoVencimento) dataToSave.diaPadraoVencimento = Number(formData.diaPadraoVencimento);
 
             if (empresa) {
@@ -285,10 +285,10 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
                     <fieldset className="border p-4 rounded-md">
                         <legend className="font-semibold px-2">Configuração PCMSO (Opcional)</legend>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField label="Médico Responsável" name="medico_nome" value={formData.medico_nome || ''} onChange={handleChange} />
-                            <InputField label="CRM do Médico" name="medico_crm" value={formData.medico_crm || ''} onChange={handleChange} />
-                            <InputField label="Início da Validade" name="inicio_validade" type="date" value={formData.inicio_validade || ''} onChange={handleChange} />
-                            <InputField label="Revisar Até" name="revisar_ate" type="date" value={formData.revisar_ate || ''} onChange={handleChange} />
+                            <InputField label="Médico Responsável" name="medicoNome" value={formData.medicoNome || ''} onChange={handleChange} />
+                            <InputField label="CRM do Médico" name="medicoCrm" value={formData.medicoCrm || ''} onChange={handleChange} />
+                            <InputField label="Início da Validade" name="inicioValidade" type="date" value={formData.inicioValidade || ''} onChange={handleChange} />
+                            <InputField label="Revisar Até" name="revisarAte" type="date" value={formData.revisarAte || ''} onChange={handleChange} />
                         </div>
                     </fieldset>
 
