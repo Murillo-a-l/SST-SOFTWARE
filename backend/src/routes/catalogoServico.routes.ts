@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -92,9 +93,9 @@ router.post('/', async (req, res) => {
                 codigoInterno,
                 nome,
                 tipo,
-                precoPadrao: new Prisma.Decimal(precoPadrao),
+                precoPadrao: new Decimal(precoPadrao),
                 descricao: descricao || null,
-                aliquotaISS: aliquotaISS ? new Prisma.Decimal(aliquotaISS) : null,
+                aliquotaISS: aliquotaISS ? new Decimal(aliquotaISS) : null,
                 codigoServicoLC116: codigoServicoLC116 || null,
                 cnae: cnae || null,
             },
@@ -157,9 +158,9 @@ router.put('/:id', async (req, res) => {
                 codigoInterno: codigoInterno || undefined,
                 nome: nome || undefined,
                 tipo: tipo || undefined,
-                precoPadrao: precoPadrao !== undefined ? new Prisma.Decimal(precoPadrao) : undefined,
+                precoPadrao: precoPadrao !== undefined ? new Decimal(precoPadrao) : undefined,
                 descricao: descricao !== undefined ? descricao : undefined,
-                aliquotaISS: aliquotaISS !== undefined ? (aliquotaISS ? new Prisma.Decimal(aliquotaISS) : null) : undefined,
+                aliquotaISS: aliquotaISS !== undefined ? (aliquotaISS ? new Decimal(aliquotaISS) : null) : undefined,
                 codigoServicoLC116: codigoServicoLC116 !== undefined ? codigoServicoLC116 : undefined,
                 cnae: cnae !== undefined ? cnae : undefined,
             },

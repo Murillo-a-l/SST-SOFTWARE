@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
         });
 
         // Calcular status de cada documento
-        const documentosComStatus = documentos.map(doc => ({
+        const documentosComStatus = documentos.map((doc: any) => ({
             ...doc,
             status: calcularStatusDocumento(doc)
         }));

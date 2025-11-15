@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
@@ -55,13 +56,13 @@ router.post('/', async (req, res) => {
         const cobranca = await prisma.cobranca.create({
             data: {
                 empresaId: Number(empresaId),
-                valorTotal: new Prisma.Decimal(valorTotal),
+                valorTotal: new Decimal(valorTotal),
                 dataEmissao: new Date(dataEmissao),
                 dataVencimento: new Date(dataVencimento),
                 status: status || 'PENDENTE',
-                desconto: valorDesconto ? new Prisma.Decimal(valorDesconto) : null,
-                juros: valorJuros ? new Prisma.Decimal(valorJuros) : null,
-                multa: valorMulta ? new Prisma.Decimal(valorMulta) : null,
+                desconto: valorDesconto ? new Decimal(valorDesconto) : null,
+                juros: valorJuros ? new Decimal(valorJuros) : null,
+                multa: valorMulta ? new Decimal(valorMulta) : null,
                 observacoes: observacoes || null,
             },
         });
@@ -91,13 +92,13 @@ router.put('/:id', async (req, res) => {
         const cobranca = await prisma.cobranca.update({
             where: { id: Number(req.params.id) },
             data: {
-                valorTotal: valorTotal !== undefined ? new Prisma.Decimal(valorTotal) : undefined,
+                valorTotal: valorTotal !== undefined ? new Decimal(valorTotal) : undefined,
                 dataEmissao: dataEmissao ? new Date(dataEmissao) : undefined,
                 dataVencimento: dataVencimento ? new Date(dataVencimento) : undefined,
                 status: status || undefined,
-                desconto: desconto !== undefined ? (desconto ? new Prisma.Decimal(desconto) : null) : undefined,
-                multa: multa !== undefined ? (multa ? new Prisma.Decimal(multa) : null) : undefined,
-                juros: juros !== undefined ? (juros ? new Prisma.Decimal(juros) : null) : undefined,
+                desconto: desconto !== undefined ? (desconto ? new Decimal(desconto) : null) : undefined,
+                multa: multa !== undefined ? (multa ? new Decimal(multa) : null) : undefined,
+                juros: juros !== undefined ? (juros ? new Decimal(juros) : null) : undefined,
                 observacoes: observacoes !== undefined ? observacoes : undefined,
                 nfeId: nfeId !== undefined ? (nfeId ? Number(nfeId) : null) : undefined,
             },
