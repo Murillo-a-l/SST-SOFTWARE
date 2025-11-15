@@ -154,21 +154,28 @@ export const EmpresaManagerModal: React.FC<ModalProps> = ({ isOpen, onClose, onS
 
         try {
             // Mapear campos do formulário para o formato da API
-            const dataToSave = {
-                matrizId: formData.matrizId,
+            // Só incluir campos que têm valor (não enviar undefined)
+            const dataToSave: any = {
                 razaoSocial: formData.razaoSocial,
                 nomeFantasia: formData.nomeFantasia,
                 cnpj: formData.cnpj,
-                endereco: formData.endereco || undefined,
-                contatoNome: formData.contatoNome || undefined,
-                contatoEmail: formData.contatoEmail || undefined,
-                contatoTelefone: formData.contatoTelefone || undefined,
-                medicoNome: formData.medico_nome || undefined,
-                medicoCrm: formData.medico_crm || undefined,
-                inicioValidade: formData.inicio_validade || undefined,
-                revisarAte: formData.revisar_ate || undefined,
-                diaPadraoVencimento: formData.diaPadraoVencimento ? Number(formData.diaPadraoVencimento) : undefined,
             };
+
+            // Adicionar matrizId se for filial
+            if (formData.matrizId) {
+                dataToSave.matrizId = formData.matrizId;
+            }
+
+            // Adicionar campos opcionais apenas se tiverem valor
+            if (formData.endereco) dataToSave.endereco = formData.endereco;
+            if (formData.contatoNome) dataToSave.contatoNome = formData.contatoNome;
+            if (formData.contatoEmail) dataToSave.contatoEmail = formData.contatoEmail;
+            if (formData.contatoTelefone) dataToSave.contatoTelefone = formData.contatoTelefone;
+            if (formData.medico_nome) dataToSave.medicoNome = formData.medico_nome;
+            if (formData.medico_crm) dataToSave.medicoCrm = formData.medico_crm;
+            if (formData.inicio_validade) dataToSave.inicioValidade = formData.inicio_validade;
+            if (formData.revisar_ate) dataToSave.revisarAte = formData.revisar_ate;
+            if (formData.diaPadraoVencimento) dataToSave.diaPadraoVencimento = Number(formData.diaPadraoVencimento);
 
             if (empresa) {
                 await empresaApi.update(empresa.id, dataToSave);

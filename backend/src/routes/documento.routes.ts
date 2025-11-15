@@ -357,28 +357,33 @@ router.post('/:id/assinar', async (req, res) => {
             return res.status(404).json({ message: 'Documento original não encontrado' });
         }
 
+        // Criar objeto de dados limpo, removendo campos undefined
+        const dataToCreate: any = {
+            empresaId: documentoOriginal.empresaId,
+            tipoId: documentoOriginal.tipoId,
+            nome: `${documentoOriginal.nome} - ASSINADO`,
+            arquivoUrl: arquivoAssinadoBase64,
+            temValidade: documentoOriginal.temValidade,
+            status: documentoOriginal.status,
+            dadosSensiveis: documentoOriginal.dadosSensiveis,
+            statusAssinatura: statusAssinatura || 'ASSINADO',
+            dataConclusaoAssinatura: new Date(),
+        };
+
+        // Adicionar campos opcionais apenas se existirem
+        if (documentoOriginal.pastaId) dataToCreate.pastaId = documentoOriginal.pastaId;
+        if (arquivoAssinadoBase64) dataToCreate.arquivoAssinadoUrl = arquivoAssinadoBase64;
+        if (documentoOriginal.observacoes) dataToCreate.observacoes = documentoOriginal.observacoes;
+        if (documentoOriginal.dataInicio) dataToCreate.dataInicio = documentoOriginal.dataInicio;
+        if (documentoOriginal.dataFim) dataToCreate.dataFim = documentoOriginal.dataFim;
+        if (documentoOriginal.requerAssinaturaDeId) dataToCreate.requerAssinaturaDeId = documentoOriginal.requerAssinaturaDeId;
+        if (documentoOriginal.solicitadoPorId) dataToCreate.solicitadoPorId = documentoOriginal.solicitadoPorId;
+        if (documentoOriginal.dataSolicitacaoAssinatura) dataToCreate.dataSolicitacaoAssinatura = documentoOriginal.dataSolicitacaoAssinatura;
+        if (observacoesAssinatura) dataToCreate.observacoesAssinatura = observacoesAssinatura;
+
         // Criar novo documento baseado no original com o arquivo assinado
         const novoDocumento = await prisma.documentoEmpresa.create({
-            data: {
-                empresaId: documentoOriginal.empresaId,
-                pastaId: documentoOriginal.pastaId,
-                tipoId: documentoOriginal.tipoId,
-                nome: `${documentoOriginal.nome} - ASSINADO`,
-                arquivoUrl: arquivoAssinadoBase64, // Arquivo assinado como arquivo principal
-                arquivoAssinadoUrl: arquivoAssinadoBase64, // Também no campo de assinado
-                observacoes: documentoOriginal.observacoes,
-                temValidade: documentoOriginal.temValidade,
-                dataInicio: documentoOriginal.dataInicio,
-                dataFim: documentoOriginal.dataFim,
-                status: documentoOriginal.status,
-                dadosSensiveis: documentoOriginal.dadosSensiveis,
-                statusAssinatura: statusAssinatura || 'ASSINADO',
-                requerAssinaturaDeId: documentoOriginal.requerAssinaturaDeId,
-                solicitadoPorId: documentoOriginal.solicitadoPorId,
-                dataSolicitacaoAssinatura: documentoOriginal.dataSolicitacaoAssinatura,
-                dataConclusaoAssinatura: new Date(),
-                observacoesAssinatura: observacoesAssinatura || null,
-            },
+            data: dataToCreate,
             include: { tipo: true }
         });
 
@@ -389,7 +394,11 @@ router.post('/:id/assinar', async (req, res) => {
         });
     } catch (error) {
         console.error('Error creating signed documento:', error);
-        res.status(500).json({ message: 'Erro ao criar documento assinado' });
+        console.error('Error details:', error);
+        res.status(500).json({
+            message: 'Erro ao criar documento assinado',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 
