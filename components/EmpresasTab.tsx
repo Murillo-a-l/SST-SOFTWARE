@@ -7,6 +7,7 @@ interface EmpresasTabProps {
     currentUser: User;
     onAdd: () => void;
     onEdit: (empresa: Empresa) => void;
+    onDelete: (empresa: Empresa) => void;
     onAddDocument: (empresa: Empresa, pastaId: number | null) => void;
     onEditDocument: (empresa: Empresa, pastaId: number | null, documento: any) => void;
     onAddPasta: (empresaId: number, parentId: number | null, pasta?: any) => void;
@@ -18,7 +19,7 @@ interface EmpresasTabProps {
 type DetailTab = 'info' | 'docs';
 
 export const EmpresasTab: React.FC<EmpresasTabProps> = (props) => {
-    const { data, currentUser, onAdd, onEdit, onAddDocument, onEditDocument, onAddPasta, onDataChange, setConfirmation, onOpenSignature } = props;
+    const { data, currentUser, onAdd, onEdit, onDelete, onAddDocument, onEditDocument, onAddPasta, onDataChange, setConfirmation, onOpenSignature } = props;
     const { empresas } = data;
 
     const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(empresas[0] || null);
@@ -85,9 +86,14 @@ export const EmpresasTab: React.FC<EmpresasTabProps> = (props) => {
                                 <h2 className="text-2xl font-bold text-gray-800">{selectedEmpresa.nomeFantasia}</h2>
                                 <p className="text-sm text-gray-500">{selectedEmpresa.razaoSocial}</p>
                             </div>
-                            <button onClick={() => onEdit(selectedEmpresa)} className="bg-gray-200 text-gray-800 font-semibold px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm">
-                                Editar
-                            </button>
+                            <div className="flex gap-2">
+                                <button onClick={() => onEdit(selectedEmpresa)} className="bg-gray-200 text-gray-800 font-semibold px-4 py-2 rounded-lg hover:bg-gray-300 transition text-sm">
+                                    Editar
+                                </button>
+                                <button onClick={() => onDelete(selectedEmpresa)} className="bg-red-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm">
+                                    Excluir
+                                </button>
+                            </div>
                         </div>
 
                         <div className="border-b border-gray-200">
@@ -134,8 +140,8 @@ const InfoTab: React.FC<{empresa: Empresa}> = ({empresa}) => (
         <DetailItem label="Dia Padrão de Vencimento" value={empresa.diaPadraoVencimento ? `Dia ${empresa.diaPadraoVencimento}` : 'Não definido'} />
          <div className="border-t pt-4 mt-4">
             <h3 className="font-semibold text-gray-700 mb-2">Responsável PCMSO</h3>
-            <DetailItem label="Médico" value={empresa.medico_nome} />
-            <DetailItem label="CRM" value={empresa.medico_crm} />
+            <DetailItem label="Médico" value={empresa.medicoNome} />
+            <DetailItem label="CRM" value={empresa.medicoCrm} />
         </div>
     </div>
 );

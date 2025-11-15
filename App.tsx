@@ -430,6 +430,31 @@ const App: React.FC = () => {
         handleOpenModal('empresaManager');
     };
 
+    const handleDeleteEmpresa = async (empresa: Empresa) => {
+        setConfirmation({
+            title: "Excluir Empresa",
+            message: (
+                <div>
+                    <p className="mb-2">Tem certeza que deseja excluir a empresa <strong>{empresa.nomeFantasia}</strong>?</p>
+                    <p className="text-sm text-red-600">Esta ação NÃO pode ser desfeita. Todos os funcionários, documentos e dados relacionados serão removidos.</p>
+                </div>
+            ),
+            confirmText: empresa.nomeFantasia,
+            confirmButtonClass: "bg-red-600 hover:bg-red-700",
+            confirmButtonText: "Excluir Empresa",
+            onConfirm: async () => {
+                try {
+                    await api.empresas.delete(empresa.id);
+                    toast.success(`Empresa "${empresa.nomeFantasia}" excluída com sucesso!`);
+                    await reloadData();
+                } catch (error) {
+                    console.error("Erro ao excluir empresa:", error);
+                    toast.error("Erro ao excluir empresa. Verifique sua conexão e tente novamente.");
+                }
+            }
+        });
+    };
+
     const handleOpenDocumentManager = (empresa: Empresa, pastaId: number | null, documento?: DocumentoEmpresa) => {
         setDocumentModalContext({ empresa, pastaId });
         setEditingDocumento(documento || null);
@@ -556,6 +581,7 @@ const App: React.FC = () => {
                             currentUser={currentUser!}
                             onAdd={() => handleOpenEmpresaManager()}
                             onEdit={handleEditEmpresa}
+                            onDelete={handleDeleteEmpresa}
                             onAddDocument={handleOpenDocumentManager}
                             onEditDocument={handleOpenDocumentManager}
                             onAddPasta={handleOpenPastaManager}
