@@ -115,53 +115,53 @@ export const AssinaturaDocumentoModal: React.FC<ModalProps> = ({ isOpen, onClose
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-                <div className="p-4 border-b flex justify-between items-center">
-                    <h2 className="text-xl font-bold">✍️ Ação de Assinatura Requerida</h2>
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col">
+                <div className="p-4 border-b flex justify-between items-center bg-blue-50">
+                    <h2 className="text-lg font-bold text-gray-800">Ação de Assinatura Requerida</h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
                 </div>
-                <div className="p-6 overflow-y-auto space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                        <p className="font-semibold">{documento.nome}</p>
-                        <p className="text-sm text-gray-600">Solicitado por: {solicitadoPor?.nome || 'Usuário desconhecido'}</p>
-                        <button onClick={handleDownload} className="text-sm text-indigo-600 hover:underline mt-2">Baixar documento original</button>
+                <div className="p-5 overflow-y-auto space-y-3">
+                    <div className="bg-gray-50 p-3 rounded border">
+                        <p className="font-medium text-sm">{documento.nome}</p>
+                        <p className="text-xs text-gray-600 mt-1">Solicitado por: {solicitadoPor?.nome || 'Usuário desconhecido'}</p>
+                        <button onClick={handleDownload} className="text-xs text-blue-600 hover:underline mt-1">📥 Baixar original</button>
                     </div>
 
-                    <div className="border rounded-md p-4 bg-green-50">
-                        <h3 className="font-semibold mb-2">📄 Opção 1: Anexar Versão Assinada (Recomendado)</h3>
-                        <p className="text-xs text-gray-600 mb-2">Um novo documento será criado com o arquivo assinado. O documento original será preservado.</p>
-                        <input id="file-upload" type="file" onChange={handleFileChange} className="text-sm" />
-                        {fileName && <p className="text-xs text-gray-500 mt-1">{fileName}</p>}
-                        <button onClick={() => handleSubmit('approve_upload')} disabled={!novaVersaoBase64 || isProcessing} className="mt-2 w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400">
-                            {isProcessing ? 'Processando...' : 'Criar Documento Assinado'}
+                    <div className="border rounded p-3 bg-green-50">
+                        <h3 className="font-semibold text-sm mb-1">Opção 1: Enviar Versão Assinada</h3>
+                        <p className="text-xs text-gray-600 mb-2">Cria um novo documento preservando o original.</p>
+                        <input id="file-upload" type="file" onChange={handleFileChange} className="text-xs w-full" />
+                        {fileName && <p className="text-xs text-gray-500 mt-1">📎 {fileName}</p>}
+                        <button onClick={() => handleSubmit('approve_upload')} disabled={!novaVersaoBase64 || isProcessing} className="mt-2 w-full bg-green-600 text-white text-sm font-semibold py-2 rounded hover:bg-green-700 transition disabled:bg-gray-300">
+                            {isProcessing ? 'Processando...' : 'Enviar Documento Assinado'}
                         </button>
                     </div>
-                    
-                    <div className="border rounded-md p-4">
-                         <h3 className="font-semibold mb-2">Opção 2: Marcar como Concluído</h3>
-                         <p className="text-xs text-gray-500 mb-2">Use esta opção se o documento foi assinado fisicamente ou por outros meios e você só precisa confirmar a tarefa.</p>
-                         <button onClick={() => handleSubmit('approve')} className="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition">
+
+                    <div className="border rounded p-3">
+                         <h3 className="font-semibold text-sm mb-1">Opção 2: Apenas Confirmar</h3>
+                         <p className="text-xs text-gray-500 mb-2">Marcar como concluído sem enviar arquivo.</p>
+                         <button onClick={() => handleSubmit('approve')} className="w-full bg-blue-600 text-white text-sm font-semibold py-2 rounded hover:bg-blue-700 transition">
                             Marcar como Assinado
                         </button>
                     </div>
 
-                    <div className="border rounded-md p-4">
-                         <h3 className="font-semibold mb-2">Opção 3: Rejeitar Documento</h3>
-                         <textarea 
+                    <div className="border rounded p-3 bg-red-50">
+                         <h3 className="font-semibold text-sm mb-1">Opção 3: Rejeitar</h3>
+                         <textarea
                             value={rejectionReason}
                             onChange={(e) => setRejectionReason(e.target.value)}
-                            placeholder="Escreva a justificativa para a rejeição aqui..."
-                            rows={3}
-                            className="w-full p-2 border rounded-md"
+                            placeholder="Justificativa da rejeição..."
+                            rows={2}
+                            className="w-full p-2 border rounded text-xs"
                          />
-                         <button onClick={() => handleSubmit('reject')} className="mt-2 w-full bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition">
-                            Rejeitar com Justificativa
+                         <button onClick={() => handleSubmit('reject')} className="mt-2 w-full bg-red-600 text-white text-sm font-semibold py-2 rounded hover:bg-red-700 transition">
+                            Rejeitar
                         </button>
                     </div>
 
                 </div>
-                 <div className="p-4 bg-gray-50 rounded-b-lg flex justify-end">
-                    <button onClick={onClose} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-300">
+                 <div className="p-3 bg-gray-50 rounded-b-lg flex justify-end">
+                    <button onClick={onClose} className="bg-gray-200 text-gray-800 px-4 py-2 rounded text-sm font-semibold hover:bg-gray-300">
                         Cancelar
                     </button>
                 </div>
