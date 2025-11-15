@@ -2,6 +2,23 @@ import { Request, Response } from 'express';
 import prisma from '../config/database';
 import { AppError } from '../middleware/errorHandler';
 
+/**
+ * Converte uma string para Date de forma segura
+ * Retorna null se a data for inválida ou não fornecida
+ */
+function parseDate(dateValue: any): Date | null {
+  if (!dateValue) return null;
+
+  const date = new Date(dateValue);
+
+  // Verifica se a data é válida
+  if (isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
 export async function getAllEmpresas(req: Request, res: Response) {
   const empresas = await prisma.empresa.findMany({
     where: { deletedAt: null },
@@ -67,11 +84,18 @@ export async function createEmpresa(req: Request, res: Response) {
     throw new AppError('CNPJ já cadastrado', 400);
   }
 
+  // Parse dates safely
+  const inicioValidade = parseDate(data.inicioValidade);
+  const revisarAte = parseDate(data.revisarAte);
+
+  // Remove inicioValidade and revisarAte from data to set them explicitly
+  const { inicioValidade: _, revisarAte: __, ...restData } = data;
+
   const empresa = await prisma.empresa.create({
     data: {
-      ...data,
-      inicioValidade: new Date(data.inicioValidade),
-      revisarAte: new Date(data.revisarAte),
+      ...restData,
+      inicioValidade,
+      revisarAte,
     },
   });
 
@@ -96,12 +120,19 @@ export async function updateEmpresa(req: Request, res: Response) {
     throw new AppError('Empresa não encontrada', 404);
   }
 
+  // Parse dates safely
+  const inicioValidade = data.inicioValidade !== undefined ? parseDate(data.inicioValidade) : undefined;
+  const revisarAte = data.revisarAte !== undefined ? parseDate(data.revisarAte) : undefined;
+
+  // Remove dates from data to set them explicitly
+  const { inicioValidade: _, revisarAte: __, ...restData } = data;
+
   const updated = await prisma.empresa.update({
     where: { id: parseInt(id) },
     data: {
-      ...data,
-      inicioValidade: data.inicioValidade ? new Date(data.inicioValidade) : undefined,
-      revisarAte: data.revisarAte ? new Date(data.revisarAte) : undefined,
+      ...restData,
+      ...(inicioValidade !== undefined && { inicioValidade }),
+      ...(revisarAte !== undefined && { revisarAte }),
     },
   });
 

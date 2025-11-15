@@ -9,6 +9,23 @@ const prisma = new PrismaClient();
 router.use(authenticate);
 
 /**
+ * Converte uma string para Date de forma segura
+ * Retorna null se a data for inválida ou não fornecida
+ */
+function parseDate(dateValue: any): Date | null {
+  if (!dateValue) return null;
+
+  const date = new Date(dateValue);
+
+  // Verifica se a data é válida
+  if (isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date;
+}
+
+/**
  * Calcula o status do documento com base na dataFim
  * Lógica: ATIVO, VENCENDO (30 dias antes), VENCIDO, ENCERRADO
  */
@@ -179,14 +196,14 @@ router.post('/', async (req, res) => {
                 arquivoUrl: arquivo, // Store base64 in arquivoUrl field temporarily
                 observacoes: observacoes || null,
                 temValidade: temValidade || false,
-                dataInicio: dataInicio ? new Date(dataInicio) : null,
-                dataFim: dataFim ? new Date(dataFim) : null,
+                dataInicio: parseDate(dataInicio),
+                dataFim: parseDate(dataFim),
                 status: status || 'ATIVO',
                 dadosSensiveis: dadosSensiveis || false,
                 statusAssinatura: statusAssinatura || 'NAO_REQUER',
                 requerAssinaturaDeId: requerAssinaturaDeId ? Number(requerAssinaturaDeId) : null,
                 solicitadoPorId: solicitadoPorId ? Number(solicitadoPorId) : null,
-                dataSolicitacaoAssinatura: dataSolicitacaoAssinatura ? new Date(dataSolicitacaoAssinatura) : null,
+                dataSolicitacaoAssinatura: parseDate(dataSolicitacaoAssinatura),
             },
         });
 
@@ -256,27 +273,30 @@ router.put('/:id', async (req, res) => {
         const arquivo = arquivoBase64 || arquivoUrl;
         const arquivoAssinado = arquivoAssinadoBase64;
 
+        // Build update data object carefully
+        const updateData: any = {};
+
+        if (empresaId !== undefined) updateData.empresaId = Number(empresaId);
+        if (pastaId !== undefined) updateData.pastaId = pastaId ? Number(pastaId) : null;
+        if (finalTipoId !== undefined) updateData.tipoId = Number(finalTipoId);
+        if (nome !== undefined) updateData.nome = nome;
+        if (arquivo !== undefined) updateData.arquivoUrl = arquivo;
+        if (arquivoAssinado !== undefined) updateData.arquivoAssinadoUrl = arquivoAssinado;
+        if (observacoes !== undefined) updateData.observacoes = observacoes;
+        if (temValidade !== undefined) updateData.temValidade = temValidade;
+        if (dataInicio !== undefined) updateData.dataInicio = parseDate(dataInicio);
+        if (dataFim !== undefined) updateData.dataFim = parseDate(dataFim);
+        if (status !== undefined) updateData.status = status;
+        if (dadosSensiveis !== undefined) updateData.dadosSensiveis = dadosSensiveis;
+        if (statusAssinatura !== undefined) updateData.statusAssinatura = statusAssinatura;
+        if (requerAssinaturaDeId !== undefined) updateData.requerAssinaturaDeId = requerAssinaturaDeId ? Number(requerAssinaturaDeId) : null;
+        if (solicitadoPorId !== undefined) updateData.solicitadoPorId = solicitadoPorId ? Number(solicitadoPorId) : null;
+        if (dataConclusaoAssinatura !== undefined) updateData.dataConclusaoAssinatura = parseDate(dataConclusaoAssinatura);
+        if (observacoesAssinatura !== undefined) updateData.observacoesAssinatura = observacoesAssinatura;
+
         const documento = await prisma.documentoEmpresa.update({
             where: { id: Number(id) },
-            data: {
-                empresaId: empresaId ? Number(empresaId) : undefined,
-                pastaId: pastaId !== undefined ? (pastaId ? Number(pastaId) : null) : undefined,
-                tipoId: finalTipoId ? Number(finalTipoId) : undefined,
-                nome: nome || undefined,
-                arquivoUrl: arquivo || undefined,
-                arquivoAssinadoUrl: arquivoAssinado !== undefined ? arquivoAssinado : undefined,
-                observacoes: observacoes !== undefined ? observacoes : undefined,
-                temValidade: temValidade !== undefined ? temValidade : undefined,
-                dataInicio: dataInicio !== undefined ? (dataInicio ? new Date(dataInicio) : null) : undefined,
-                dataFim: dataFim !== undefined ? (dataFim ? new Date(dataFim) : null) : undefined,
-                status: status || undefined,
-                dadosSensiveis: dadosSensiveis !== undefined ? dadosSensiveis : undefined,
-                statusAssinatura: statusAssinatura || undefined,
-                requerAssinaturaDeId: requerAssinaturaDeId !== undefined ? (requerAssinaturaDeId ? Number(requerAssinaturaDeId) : null) : undefined,
-                solicitadoPorId: solicitadoPorId !== undefined ? (solicitadoPorId ? Number(solicitadoPorId) : null) : undefined,
-                dataConclusaoAssinatura: dataConclusaoAssinatura !== undefined ? (dataConclusaoAssinatura ? new Date(dataConclusaoAssinatura) : null) : undefined,
-                observacoesAssinatura: observacoesAssinatura !== undefined ? observacoesAssinatura : undefined,
-            },
+            data: updateData,
         });
 
         res.json(documento);
