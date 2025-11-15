@@ -342,6 +342,12 @@ router.post('/:id/assinar', async (req, res) => {
             statusAssinatura
         } = req.body;
 
+        console.log('=== DEBUG: ASSINAR DOCUMENTO ===');
+        console.log('1. ID do documento:', id);
+        console.log('2. Status de assinatura:', statusAssinatura);
+        console.log('3. Tem arquivo assinado?:', !!arquivoAssinadoBase64);
+        console.log('4. Tamanho do arquivo (bytes):', arquivoAssinadoBase64?.length || 0);
+
         // Validação básica
         if (!arquivoAssinadoBase64) {
             return res.status(400).json({ message: 'Arquivo assinado é obrigatório' });
@@ -356,6 +362,8 @@ router.post('/:id/assinar', async (req, res) => {
         if (!documentoOriginal) {
             return res.status(404).json({ message: 'Documento original não encontrado' });
         }
+
+        console.log('5. Documento original encontrado:', documentoOriginal.nome);
 
         // Criar objeto de dados limpo, removendo campos undefined
         const dataToCreate: any = {
@@ -381,11 +389,19 @@ router.post('/:id/assinar', async (req, res) => {
         if (documentoOriginal.dataSolicitacaoAssinatura) dataToCreate.dataSolicitacaoAssinatura = documentoOriginal.dataSolicitacaoAssinatura;
         if (observacoesAssinatura) dataToCreate.observacoesAssinatura = observacoesAssinatura;
 
+        console.log('6. Dados preparados para criar documento assinado:', {
+            ...dataToCreate,
+            arquivoUrl: `[${dataToCreate.arquivoUrl?.length || 0} bytes]`,
+            arquivoAssinadoUrl: `[${dataToCreate.arquivoAssinadoUrl?.length || 0} bytes]`,
+        });
+
         // Criar novo documento baseado no original com o arquivo assinado
         const novoDocumento = await prisma.documentoEmpresa.create({
             data: dataToCreate,
             include: { tipo: true }
         });
+
+        console.log('7. Documento assinado criado com sucesso! ID:', novoDocumento.id);
 
         res.status(201).json({
             status: 'success',
@@ -393,8 +409,12 @@ router.post('/:id/assinar', async (req, res) => {
             data: novoDocumento
         });
     } catch (error) {
-        console.error('Error creating signed documento:', error);
-        console.error('Error details:', error);
+        console.error('8. ERRO ao criar documento assinado:');
+        console.error('Tipo do erro:', error?.constructor?.name);
+        console.error('Mensagem:', error instanceof Error ? error.message : 'Unknown error');
+        console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack');
+        console.error('Erro completo:', error);
+
         res.status(500).json({
             message: 'Erro ao criar documento assinado',
             error: error instanceof Error ? error.message : 'Unknown error'

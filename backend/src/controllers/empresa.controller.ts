@@ -86,6 +86,9 @@ export async function getEmpresaById(req: Request, res: Response) {
 export async function createEmpresa(req: Request, res: Response) {
   const data = req.body;
 
+  console.log('=== DEBUG: CREATE EMPRESA ===');
+  console.log('1. Dados recebidos do frontend:', JSON.stringify(data, null, 2));
+
   // Validate CNPJ uniqueness
   const existingEmpresa = await prisma.empresa.findFirst({
     where: {
@@ -102,6 +105,8 @@ export async function createEmpresa(req: Request, res: Response) {
   const inicioValidade = parseDate(data.inicioValidade);
   const revisarAte = parseDate(data.revisarAte);
 
+  console.log('2. Datas parseadas:', { inicioValidade, revisarAte });
+
   // Remove inicioValidade and revisarAte from data to set them explicitly
   const { inicioValidade: _, revisarAte: __, ...restData } = data;
 
@@ -112,14 +117,23 @@ export async function createEmpresa(req: Request, res: Response) {
     revisarAte,
   });
 
-  const empresa = await prisma.empresa.create({
-    data: cleanData,
-  });
+  console.log('3. Dados limpos para o Prisma:', JSON.stringify(cleanData, null, 2));
 
-  res.status(201).json({
-    status: 'success',
-    data: { empresa },
-  });
+  try {
+    const empresa = await prisma.empresa.create({
+      data: cleanData,
+    });
+
+    console.log('4. Empresa criada com sucesso:', empresa.id);
+
+    res.status(201).json({
+      status: 'success',
+      data: { empresa },
+    });
+  } catch (error) {
+    console.error('5. ERRO ao criar empresa:', error);
+    throw error;
+  }
 }
 
 export async function updateEmpresa(req: Request, res: Response) {
