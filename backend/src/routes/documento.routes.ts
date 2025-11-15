@@ -362,7 +362,8 @@ router.post('/:id/assinar', async (req, res) => {
             empresaId: documentoOriginal.empresaId,
             tipoId: documentoOriginal.tipoId,
             nome: `${documentoOriginal.nome} - ASSINADO`,
-            arquivoUrl: arquivoAssinadoBase64,
+            arquivoUrl: documentoOriginal.arquivoUrl, // Preserva o arquivo original
+            arquivoAssinadoUrl: arquivoAssinadoBase64, // Adiciona o arquivo assinado
             temValidade: documentoOriginal.temValidade,
             status: documentoOriginal.status,
             dadosSensiveis: documentoOriginal.dadosSensiveis,
@@ -372,7 +373,6 @@ router.post('/:id/assinar', async (req, res) => {
 
         // Adicionar campos opcionais apenas se existirem
         if (documentoOriginal.pastaId) dataToCreate.pastaId = documentoOriginal.pastaId;
-        if (arquivoAssinadoBase64) dataToCreate.arquivoAssinadoUrl = arquivoAssinadoBase64;
         if (documentoOriginal.observacoes) dataToCreate.observacoes = documentoOriginal.observacoes;
         if (documentoOriginal.dataInicio) dataToCreate.dataInicio = documentoOriginal.dataInicio;
         if (documentoOriginal.dataFim) dataToCreate.dataFim = documentoOriginal.dataFim;

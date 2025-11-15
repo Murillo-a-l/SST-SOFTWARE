@@ -210,10 +210,10 @@ export interface Empresa {
   contatoNome?: string;
   contatoEmail?: string;
   contatoTelefone?: string;
-  medicoNome: string;
-  medicoCrm: string;
-  inicioValidade: string;
-  revisarAte: string;
+  medicoNome?: string;
+  medicoCrm?: string;
+  inicioValidade?: string;
+  revisarAte?: string;
   diaPadraoVencimento?: number;
   createdAt: string;
   updatedAt: string;
@@ -234,10 +234,10 @@ export interface CreateEmpresaDto {
   contatoNome?: string;
   contatoEmail?: string;
   contatoTelefone?: string;
-  medicoNome: string;
-  medicoCrm: string;
-  inicioValidade: string;
-  revisarAte: string;
+  medicoNome?: string;
+  medicoCrm?: string;
+  inicioValidade?: string;
+  revisarAte?: string;
   diaPadraoVencimento?: number;
 }
 
