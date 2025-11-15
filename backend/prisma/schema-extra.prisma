@@ -45,6 +45,7 @@ model DocumentoEmpresa {
   nome                        String
   dataUpload                  DateTime         @default(now()) @map("data_upload")
   arquivoUrl                  String           @map("arquivo_url")
+  arquivoAssinadoUrl          String?          @map("arquivo_assinado_url")
   observacoes                 String?          @db.Text
   temValidade                 Boolean          @default(false) @map("tem_validade")
   dataInicio                  DateTime?        @map("data_inicio") @db.Date
