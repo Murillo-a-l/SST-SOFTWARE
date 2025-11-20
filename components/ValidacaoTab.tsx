@@ -2,6 +2,8 @@
 import React, { useMemo, useState } from 'react';
 import type { Funcionario, ExameRealizado } from '../types';
 import { getValidationIssues } from '../services/dbService';
+import { Button } from '../src/components/ui/Button';
+import { TableShell, tableHeaderCell, tableCell } from '../src/components/ui/TableShell';
 
 interface ValidacaoTabProps {
   funcionarios: Funcionario[];
@@ -32,15 +34,15 @@ export const ValidacaoTab: React.FC<ValidacaoTabProps> = ({ funcionarios, exames
   };
 
   return (
-    <div>
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
-            <div className="flex items-center space-x-2">
-            <label htmlFor="problem-filter" className="font-medium">Filtrar por problema:</label>
+    <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex items-center space-x-3 w-full sm:w-auto">
+            <label htmlFor="problem-filter" className="text-sm font-medium text-slate-700">Filtrar por problema:</label>
             <select
                 id="problem-filter"
                 value={filterProblem}
                 onChange={(e) => setFilterProblem(e.target.value)}
-                className="p-2 border border-gray-300 rounded-lg"
+                className="rounded-lg border border-[#D5D8DC] bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#3A6EA5]/40 focus:border-[#3A6EA5] shadow-sm"
             >
                 <option value="Todos">Todos</option>
                 <option value="Sem CPF">Sem CPF</option>
@@ -48,38 +50,34 @@ export const ValidacaoTab: React.FC<ValidacaoTabProps> = ({ funcionarios, exames
                 <option value="Sem Exame">Sem Exame</option>
             </select>
             </div>
-            <button onClick={onDataChange} className="bg-gray-200 text-gray-800 font-semibold px-4 py-2 rounded-lg hover:bg-gray-300 transition w-full sm:w-auto">
-            🔄 Atualizar
-            </button>
+            <Button variant="secondary" onClick={onDataChange} className="w-full sm:w-auto" icon={<span>🔄</span>}>
+            Atualizar
+            </Button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {['Matrícula', 'Nome', 'Problemas'].map(h => (
-                <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
-              ))}
-              <th className="relative px-6 py-3"><span className="sr-only">Ações</span></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredIssues.map(issue => (
-              <tr key={issue.funcionarioId} className="hover:bg-amber-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{issue.matricula || `ID:${issue.funcionarioId}`}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{issue.nome}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
-                  {issue.issues.join(', ')}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button onClick={() => handleCorrect(issue.funcionarioId)} className="text-indigo-600 hover:text-indigo-900">Corrigir</button>
-                </td>
-              </tr>
+      <TableShell>
+        <thead className="bg-[#F1F3F5]">
+          <tr>
+            {['Matrícula', 'Nome', 'Problemas'].map(h => (
+              <th key={h} className={tableHeaderCell}>{h}</th>
             ))}
-          </tbody>
-        </table>
-        {filteredIssues.length === 0 && <p className="text-center py-8 text-gray-500">Nenhum problema de validação encontrado!</p>}
-      </div>
+            <th className={tableHeaderCell}><span className="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredIssues.map(issue => (
+            <tr key={issue.funcionarioId} className="border-b border-[#ECECEC] hover:bg-[#FFF7E6]">
+              <td className={`${tableCell} whitespace-nowrap`}>{issue.matricula || `ID:${issue.funcionarioId}`}</td>
+              <td className={`${tableCell} whitespace-nowrap font-medium`}>{issue.nome}</td>
+              <td className={`${tableCell} whitespace-nowrap text-[#8A1F1F] font-medium`}>{issue.issues.join(', ')}</td>
+              <td className={`${tableCell} whitespace-nowrap text-right font-medium`}>
+                <button onClick={() => handleCorrect(issue.funcionarioId)} className="text-[#2F5C8C] hover:underline">Corrigir</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </TableShell>
+        {filteredIssues.length === 0 && <p className="text-center py-8 text-slate-500">Nenhum problema de validação encontrado!</p>}
     </div>
   );
 };

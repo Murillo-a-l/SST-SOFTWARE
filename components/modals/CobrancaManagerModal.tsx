@@ -214,8 +214,8 @@ export const CobrancaManagerModal: React.FC<ModalProps> = ({
         : '';
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-50 flex items-center justify-center px-4 py-6">
+            <div className="bg-white rounded-2xl border border-[#DADFE3] shadow-lg w-full max-w-5xl max-h-[90vh] flex flex-col">
                 <div className="p-4 border-b flex justify-between items-center">
                     <h2 className="text-xl font-bold">
                         {isEditing ? 'Editar Cobrança' : 'Nova Cobrança'}
