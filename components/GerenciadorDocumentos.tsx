@@ -257,17 +257,17 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
         <div className="flex flex-col h-full">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
                 <div className="flex-grow flex items-center gap-2 w-full sm:w-auto">
-                    <input type="text" placeholder="🔍 Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="p-2 border rounded-lg w-full"/>
-                    <select value={filterType} onChange={e => setFilterType(e.target.value)} className="p-2 border rounded-lg">
+                    <input type="text" placeholder="🔍 Buscar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full rounded-lg border border-[#D5D8DC] bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#3A6EA5]/40 focus:border-[#3A6EA5]"/>
+                    <select value={filterType} onChange={e => setFilterType(e.target.value)} className="rounded-lg border border-[#D5D8DC] bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#3A6EA5]/40 focus:border-[#3A6EA5]">
                         <option value="Todos">Todos os Tipos</option>
                         {['ASO', 'Contrato', 'Alvará', 'PGR', 'PCMSO', 'Outro'].map(t => <option key={t}>{t}</option>)}
                     </select>
                 </div>
                  <div className="flex gap-2 w-full sm:w-auto">
-                    <button onClick={() => onAddPasta(empresa.id, currentFolderId)} className="w-full bg-blue-500 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 transition text-sm">
+                    <button onClick={() => onAddPasta(empresa.id, currentFolderId)} className="w-full rounded-lg border border-[#D5D8DC] bg-[#F4F6F8] px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-[#E4E7EB] transition">
                         + Nova Pasta
                     </button>
-                    <button onClick={() => onAddDocument(empresa, currentFolderId)} className="w-full bg-green-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition text-sm">
+                    <button onClick={() => onAddDocument(empresa, currentFolderId)} className="w-full bg-[#2F5C8C] text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:bg-[#274B73] transition text-sm">
                         + Documento
                     </button>
                 </div>
@@ -297,32 +297,33 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                 </div>
             </div>
 
-            <div className="overflow-auto flex-grow border rounded-lg">
-                 <table className="min-w-full bg-white divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            <div className="overflow-hidden flex-grow rounded-2xl border border-[#E0E3E7] bg-white shadow-sm">
+                <div className="overflow-auto">
+                 <table className="min-w-full">
+                    <thead className="bg-[#F1F3F5]">
                         <tr>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">Nome</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assinatura</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimento</th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480] w-2/5">Nome</th>
+                            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]">Tipo</th>
+                            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]">Assinatura</th>
+                            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]">Vencimento</th>
+                            <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]">Status</th>
+                            <th className="px-4 py-2.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]">Ações</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody>
                         {filteredItems.map(item => {
                             const isFolder = 'parentId' in item;
                             const assignedUser = !isFolder && item.requerAssinaturaDeId ? users.find(u => u.id === item.requerAssinaturaDeId)?.nome : 'N/A';
                             return (
-                                <tr key={(isFolder ? 'f-' : 'd-') + item.id} className="hover:bg-gray-50">
-                                    <td onClick={() => isFolder && setCurrentFolderId(item.id)} className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 cursor-pointer">
+                                <tr key={(isFolder ? 'f-' : 'd-') + item.id} className="border-b border-[#ECECEC] hover:bg-[#F8FAFC]">
+                                    <td onClick={() => isFolder && setCurrentFolderId(item.id)} className="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-slate-800 cursor-pointer">
                                         <div className="flex items-center gap-2">
                                             {isFolder ? <FolderIcon /> : <FileIcon />}
                                             <span>{item.nome}</span>
                                             {!isFolder && item.dadosSensiveis && <span title="Contém dados sensíveis" className="text-red-500">⚠️</span>}
                                         </div>
                                     </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">
                                         {isFolder ? 'Pasta' : (
                                             <div className="flex items-center gap-2">
                                                 <span>{getFileIconForType(item.nome)}</span>
@@ -331,12 +332,12 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                                             </div>
                                         )}
                                     </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">
                                         {!isFolder && <SignatureStatusBadge status={item.statusAssinatura} assignedTo={assignedUser} />}
                                     </td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{!isFolder && formatDate(item.dataFim)}</td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{!isFolder && <StatusBadge status={item.status} />}</td>
-                                    <td className="px-3 py-2 whitespace-nowrap text-center text-sm font-medium">
+                                    <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">{!isFolder && formatDate(item.dataFim)}</td>
+                                    <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">{!isFolder && <StatusBadge status={item.status} />}</td>
+                                    <td className="px-4 py-2.5 whitespace-nowrap text-center text-sm font-medium">
                                         <ActionMenu
                                             item={item}
                                             onEdit={() => isFolder ? onAddPasta(empresa.id, item.parentId, item) : onEditDocument(empresa, item.pastaId, item)}
@@ -353,7 +354,8 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                         })}
                     </tbody>
                 </table>
-                 {filteredItems.length === 0 && <p className="text-center py-8 text-gray-500">Nenhum item nesta pasta.</p>}
+                </div>
+                 {filteredItems.length === 0 && <p className="text-center py-8 text-slate-500">Nenhum item nesta pasta.</p>}
             </div>
         </div>
     );

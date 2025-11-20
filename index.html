@@ -12,25 +12,52 @@
       tailwind.config = {
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
             colors: {
-              'azul-serenity': '#A9D6E5',
-              'verde-menta': '#B5EAD7',
-              'pessego-suave': '#FFD6A5',
-              'lilas-pastel': '#CDB4DB',
-              'bege-areia': '#FFE5B4',
-              'cinza-claro': '#F5F5F5',
-              'texto-escuro': '#333333',
-              'vermelho-suave': '#FFB6B6',
-              'amarelo-suave': '#FFF3B8'
-            }
+              bgApp: '#F4F6F8',
+              bgCard: '#FFFFFF',
+              bgMuted: '#F9FAFB',
+              border: '#D5D8DC',
+              borderSoft: '#E0E3E7',
+              borderMuted: '#C9CDD2',
+              textPrimary: '#2F343A',
+              textSecondary: '#6B7480',
+              textMuted: '#7B8EA3',
+              primary: '#3A6EA5',
+              primaryDark: '#2F5C8C',
+              success: '#79A88E',
+              warning: '#F6B980',
+              danger: '#D97777',
+              retroSand: '#E7E2D9',
+              retroTerracotta: '#C48A84',
+              retroBordo: '#8A5260',
+            },
+            spacing: {
+              xs: '4px',
+              sm: '8px',
+              md: '12px',
+              lg: '16px',
+              xl: '24px',
+              xxl: '32px',
+            },
+            borderRadius: {
+              sm: '6px',
+              md: '10px',
+              lg: '16px',
+              xl: '20px',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+            },
+            boxShadow: {
+              card: '0 6px 18px rgba(47, 92, 140, 0.06)',
+              soft: '0 10px 30px rgba(27, 44, 76, 0.08)',
+            },
           }
         }
       }
     </script>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.1.1",
@@ -42,7 +69,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-gray-100">
+  <body class="bg-[#F4F6F8] text-slate-800 font-sans">
     <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
