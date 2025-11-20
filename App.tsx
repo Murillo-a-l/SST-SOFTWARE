@@ -690,11 +690,7 @@ const App: React.FC = () => {
                 onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             />
 
-            <div
-                className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
-                    isSidebarCollapsed ? 'ml-20' : 'ml-64'
-                }`}
-            >
+            <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
                 <Header
                     onOpenNotifications={() => handleOpenModal('notifications')}
                     notificationCount={notifications.length}
@@ -706,6 +702,7 @@ const App: React.FC = () => {
                 />
                 <main className="flex-1 overflow-y-auto">
                     <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+                    <div className="max-w-7xl mx-auto px-6 py-6">
                         {renderContent()}
                     </div>
                 </main>
@@ -823,12 +820,6 @@ const App: React.FC = () => {
             >
                 {confirmation?.message}
             </ConfirmationModal>
-
-            {/* Loading Spinner */}
-            {isLoadingData && <LoadingSpinner message="Carregando dados..." />}
-
-            {/* Toast Notifications */}
-            <Toaster position="top-right" />
         </div>
     );
 };
