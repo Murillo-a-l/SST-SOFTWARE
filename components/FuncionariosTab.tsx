@@ -98,13 +98,13 @@ export const FuncionariosTab: React.FC<FuncionariosTabProps> = (props) => {
             placeholder="🔍 Buscar por nome, matrícula, CPF..."
             value={filterText}
             onChange={(e) => setFilterText(e.target.value.toLowerCase())}
-            className="p-2 border border-gray-300 rounded-lg w-full sm:w-64"
+            className="w-full sm:w-64 rounded-lg border border-[#D5D8DC] bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#3A6EA5]/40 focus:border-[#3A6EA5]"
             disabled={!hasSelectedEmpresa}
           />
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as StatusExame)}
-            className="p-2 border border-gray-300 rounded-lg"
+            className="rounded-lg border border-[#D5D8DC] bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#3A6EA5]/40 focus:border-[#3A6EA5]"
             disabled={!hasSelectedEmpresa}
           >
             <option value="Todos">Todos os Status</option>
@@ -115,51 +115,53 @@ export const FuncionariosTab: React.FC<FuncionariosTabProps> = (props) => {
           </select>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-            <button onClick={onRegister} className="bg-green-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-green-700 transition w-full sm:w-auto">
+            <button onClick={onRegister} className="bg-[#2F5C8C] text-white font-semibold px-4 py-2 rounded-lg shadow-sm hover:bg-[#274B73] transition w-full sm:w-auto">
                 👤+ Cadastrar
             </button>
-            <button onClick={onRegisterExame} className="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-indigo-700 transition w-full sm:w-auto">
+            <button onClick={onRegisterExame} className="bg-[#F4F6F8] text-slate-800 font-semibold px-4 py-2 rounded-lg border border-[#D5D8DC] shadow-sm hover:bg-[#E4E7EB] transition w-full sm:w-auto">
               ➕ Registrar Exame
             </button>
         </div>
       </div>
-      
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              {['Matrícula', 'Nome', 'Cargo', 'Tipo Exame', 'Data Exame', 'Próximo Venc.', 'Status'].map(h => (
-                <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
-              ))}
-               <th className="relative px-6 py-3"><span className="sr-only">Ações</span></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filteredData.map(func => (
-              <tr key={func.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{func.matricula || `ID:${func.id}`}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{func.nome}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{func.cargo}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{func.tipo_exame}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(func.data_exame)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(func.proximo_vencimento)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${func.status_color}`}>
-                    {func.status_exame}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                    <button onClick={() => onDetails(func)} className="text-gray-600 hover:text-gray-900">Detalhes</button>
-                    <button onClick={() => onEdit(func)} className="text-indigo-600 hover:text-indigo-900">Editar</button>
-                    <button onClick={() => onDeactivate(func.id)} className="text-orange-600 hover:text-orange-900">Desativar</button>
-                    <button onClick={() => onDelete(func.id, func.nome)} className="text-red-600 hover:text-red-900">Excluir</button>
-                </td>
+
+      <div className="overflow-hidden rounded-2xl border border-[#E0E3E7] bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-[#F1F3F5]">
+              <tr>
+                {['Matrícula', 'Nome', 'Cargo', 'Tipo Exame', 'Data Exame', 'Próximo Venc.', 'Status'].map(h => (
+                  <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]">{h}</th>
+                ))}
+                 <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]"><span className="sr-only">Ações</span></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredData.map(func => (
+                <tr key={func.id} className="border-b border-[#ECECEC] hover:bg-[#F8FAFC]">
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">{func.matricula || `ID:${func.id}`}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-slate-800">{func.nome}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">{func.cargo}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">{func.tipo_exame}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">{formatDate(func.data_exame)}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">{formatDate(func.proximo_vencimento)}</td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-sm">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${func.status_color}`}>
+                      {func.status_exame}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                      <button onClick={() => onDetails(func)} className="text-slate-600 hover:text-slate-900">Detalhes</button>
+                      <button onClick={() => onEdit(func)} className="text-[#2F5C8C] hover:underline">Editar</button>
+                      <button onClick={() => onDeactivate(func.id)} className="text-[#F6B980] hover:text-[#8A5B2F]">Desativar</button>
+                      <button onClick={() => onDelete(func.id, func.nome)} className="text-[#D97777] hover:underline">Excluir</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {filteredData.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-slate-500">
                 {!hasSelectedEmpresa ? "Selecione uma empresa no menu superior para visualizar os funcionários." : "Nenhum funcionário encontrado para esta empresa e filtros."}
             </div>
         )}

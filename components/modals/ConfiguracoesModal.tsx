@@ -37,7 +37,7 @@ export const ConfiguracoesModal: React.FC<ModalProps> = (props) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-50 flex items-center justify-center px-4 py-6">
             <div className="bg-gray-50 rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
                 <div className="p-4 border-b flex justify-between items-center bg-white rounded-t-lg">
                     <h2 className="text-xl font-bold">⚙️ Configurações e Gerenciamento</h2>
