@@ -43,7 +43,6 @@ export const ValidacaoTab: React.FC<ValidacaoTabProps> = ({ funcionarios, exames
                 value={filterProblem}
                 onChange={(e) => setFilterProblem(e.target.value)}
                 className="rounded-lg border border-[#D5D8DC] bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#3A6EA5]/40 focus:border-[#3A6EA5] shadow-sm"
-                className="rounded-lg border border-[#D5D8DC] bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#3A6EA5]/40 focus:border-[#3A6EA5]"
             >
                 <option value="Todos">Todos</option>
                 <option value="Sem CPF">Sem CPF</option>
@@ -78,39 +77,7 @@ export const ValidacaoTab: React.FC<ValidacaoTabProps> = ({ funcionarios, exames
           ))}
         </tbody>
       </TableShell>
-        {filteredIssues.length === 0 && <p className="text-center py-8 text-slate-500">Nenhum problema de validação encontrado!</p>}
-            <button onClick={onDataChange} className="w-full sm:w-auto rounded-lg border border-[#D5D8DC] bg-[#F4F6F8] px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-[#E4E7EB] transition">
-            🔄 Atualizar
-            </button>
-      </div>
-
-      <div className="overflow-hidden rounded-2xl border border-[#E0E3E7] bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-[#F1F3F5]">
-              <tr>
-                {['Matrícula', 'Nome', 'Problemas'].map(h => (
-                  <th key={h} className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]">{h}</th>
-                ))}
-                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480]"><span className="sr-only">Ações</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredIssues.map(issue => (
-                <tr key={issue.funcionarioId} className="border-b border-[#ECECEC] hover:bg-[#FFF7E6]">
-                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-slate-800">{issue.matricula || `ID:${issue.funcionarioId}`}</td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-slate-800">{issue.nome}</td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-sm text-[#8A1F1F] font-medium">{issue.issues.join(', ')}</td>
-                  <td className="px-4 py-2.5 whitespace-nowrap text-right text-sm font-medium">
-                    <button onClick={() => handleCorrect(issue.funcionarioId)} className="text-[#2F5C8C] hover:underline">Corrigir</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {filteredIssues.length === 0 && <p className="text-center py-8 text-slate-500">Nenhum problema de validação encontrado!</p>}
-      </div>
+      {filteredIssues.length === 0 && <p className="text-center py-8 text-slate-500">Nenhum problema de validação encontrado!</p>}
     </div>
   );
 };

@@ -97,10 +97,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, notificatio
                 className="p-1.5 text-[#7B8EA3] hover:text-[#D97777] rounded-full hover:bg-[#FDECEC] focus:outline-none transition-colors"
               >
                 <AppIcon name="logout" className="h-5 w-5" />
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-700">Olá, <span className="font-semibold">{user?.nome || 'Usuário'}</span></span>
-              <button onClick={onLogout} title="Sair" className="p-2 text-[#7B8EA3] hover:text-[#D97777] rounded-full hover:bg-[#FDECEC] focus:outline-none">
-                  <LogoutIcon />
               </button>
             </div>
           </div>
