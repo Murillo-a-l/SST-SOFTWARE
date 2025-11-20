@@ -86,52 +86,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, documentos, documen
             <QuickActionButton text="Registrar Exame" icon={<AppIcon name="clipboard" />} onClick={onRegisterExame} />
           </div>
         </Card>
-      <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">Visão Geral</p>
-        <h2 className="text-lg font-semibold text-slate-800">Dashboard</h2>
-        <p className="text-sm text-[#2F5C8C] font-medium">{selectedEmpresaNome}</p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Total Funcionários" value={stats.totalFuncionarios} color="" icon="👥" />
-        <StatCard title="Exames Atrasados" value={stats.examesAtrasados} color="" icon="⚠️" />
-        <StatCard title="Vencendo em 30 dias" value={stats.vencendo30Dias} color="" icon="📅" />
-        <StatCard title="Em dia" value={stats.emDia} color="" icon="✅" />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <StatCard title="Assinaturas Pendentes" value={stats.assinaturasPendentes} color="" icon="✍️" />
-        <div className="rounded-2xl border border-[#E0E3E7] bg-white p-5 shadow-sm flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">Contratos</p>
-                    <p className="font-mono text-2xl text-[#2F5C8C]">{stats.totalContratos}</p>
-                </div>
-                <span className="text-2xl">📜</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#E0E3E7]">
-                <div className="rounded-xl bg-[#E3F3EA] p-3 text-center">
-                    <p className="text-[11px] font-semibold text-[#2F6E4A]">Em dia</p>
-                    <p className="font-mono text-lg text-[#2F6E4A]">{stats.contratosAtivos}</p>
-                </div>
-                <div className="rounded-xl bg-[#FFF7E6] p-3 text-center">
-                    <p className="text-[11px] font-semibold text-[#8A5B2F]">Vencendo</p>
-                    <p className="font-mono text-lg text-[#8A5B2F]">{stats.contratosVencendo}</p>
-                </div>
-                <div className="rounded-xl bg-[#FDECEC] p-3 text-center">
-                    <p className="text-[11px] font-semibold text-[#8A1F1F]">Vencidos</p>
-                    <p className="font-mono text-lg text-[#8A1F1F]">{stats.contratosVencidos}</p>
-                </div>
-            </div>
-        </div>
-        <div className="rounded-2xl border border-[#E0E3E7] bg-white p-5 shadow-sm flex flex-col gap-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">Ações Rápidas</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
-                <QuickActionButton text="Importar Planilha" icon={<ImportIcon />} onClick={onImport} />
-                <QuickActionButton text="Cadastrar Funcionário" icon={<UserPlusIcon />} onClick={onRegister} />
-                <QuickActionButton text="Registrar Exame" icon={<ClipboardPlusIcon />} onClick={onRegisterExame} />
-            </div>
-        </div>
       </div>
 
       <DashboardAlerts documentos={documentos} empresas={empresas} documentoTipos={documentoTipos} />
