@@ -819,12 +819,6 @@ const App: React.FC = () => {
             >
                 {confirmation?.message}
             </ConfirmationModal>
-
-            {/* Loading Spinner */}
-            {isLoadingData && <LoadingSpinner message="Carregando dados..." />}
-
-            {/* Toast Notifications */}
-            <Toaster position="top-right" />
         </div>
     );
 };
