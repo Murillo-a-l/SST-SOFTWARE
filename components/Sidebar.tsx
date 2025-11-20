@@ -22,15 +22,15 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, view, isActive, 
     <li>
       <button
         onClick={() => onClick(view)}
-        className={`flex items-center w-full text-left p-3 rounded-lg transition-colors duration-200 ${
+        className={`group flex items-center w-full text-left px-3 py-2 rounded-xl transition-all duration-200 ${
           isActive
-            ? 'bg-indigo-600 text-white shadow-md'
-            : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'
-        } ${isCollapsed ? 'justify-center' : ''}`}
+            ? 'bg-[#E8ECF0] border-l-4 border-[#3A6EA5] text-[#2F5C8C] font-semibold shadow-sm'
+            : 'text-slate-700 hover:bg-[#F1F3F5] hover:text-slate-900'
+        } ${isCollapsed ? 'justify-center px-2' : ''}`}
         title={isCollapsed ? label : ''}
       >
-        <span className="w-6 h-6">{icon}</span>
-        {!isCollapsed && <span className="font-semibold ml-3 whitespace-nowrap">{label}</span>}
+        <span className={`w-6 h-6 ${isActive ? 'text-[#2F5C8C]' : 'text-[#6A7381]'}`}>{icon}</span>
+        {!isCollapsed && <span className="ml-3 whitespace-nowrap text-sm font-medium">{label}</span>}
       </button>
     </li>
   );
@@ -48,14 +48,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
   ];
 
   return (
-    <aside className={`fixed top-0 left-0 h-screen bg-white flex-shrink-0 p-4 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`}>
-      <div className={`flex items-center h-16 border-b pb-4 mb-4 ${isCollapsed ? 'justify-center' : ''}`}>
-        <span className="text-2xl font-bold text-blue-600">🩺</span>
-        {!isCollapsed && (
-            <h1 className="text-md font-bold text-gray-800 leading-tight ml-2 whitespace-nowrap">
-            Saúde Ocupacional
-            </h1>
-        )}
+    <aside className={`fixed top-0 left-0 h-screen bg-white border-r border-[#D5D8DC] flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20 px-3' : 'w-60 px-4'}`}>
+      <div className={`flex items-center h-16 border-b border-[#E0E3E7] ${isCollapsed ? 'justify-center' : 'justify-between'} py-4 mb-4`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'}`}>
+          <span className="text-2xl font-bold text-[#2F5C8C]">🩺</span>
+          {!isCollapsed && (
+            <div className="leading-tight">
+              <p className="text-sm font-semibold text-slate-800">Saúde Ocupacional</p>
+              <p className="text-xs text-slate-500">Painel Clínico</p>
+            </div>
+          )}
+        </div>
       </div>
       <nav className="flex-grow">
         <ul className="space-y-2">
@@ -72,16 +75,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
           ))}
         </ul>
       </nav>
-      <div className="mt-auto pt-4 border-t border-gray-200">
+      <div className="mt-auto pt-4 border-t border-[#E0E3E7]">
          <button
             onClick={onToggle}
-            className={`flex items-center w-full p-3 rounded-lg transition-colors duration-200 text-gray-600 hover:bg-gray-100 ${isCollapsed ? 'justify-center' : ''}`}
+            className={`flex items-center w-full px-3 py-2 rounded-full border border-[#D5D8DC] bg-white text-slate-600 hover:bg-[#F1F3F5] transition-colors duration-200 ${isCollapsed ? 'justify-center' : 'justify-between'}`}
             title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
          >
-            <span className="w-6 h-6">
+            {!isCollapsed && <span className="text-sm font-medium">{isCollapsed ? 'Expandir' : 'Recolher'} menu</span>}
+            <span className="w-5 h-5 text-[#6A7381]">
                 {isCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
             </span>
-            {!isCollapsed && <span className="font-semibold text-sm ml-3">Recolher</span>}
          </button>
       </div>
     </aside>

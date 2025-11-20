@@ -15,12 +15,13 @@ interface DashboardProps {
 
 const StatCard: React.FC<{ title: string; value: number; color: string; icon: string; }> = ({ title, value, color, icon }) => {
   return (
-    <div className={`bg-white p-5 rounded-xl shadow-md flex items-center border-l-4 ${color}`}>
-      <div className="text-3xl mr-4">{icon}</div>
-      <div className="flex-grow text-center">
-        <p className="text-sm text-gray-500 font-medium">{title}</p>
-        <p className="text-3xl font-bold text-gray-800">{value}</p>
+    <div className={`rounded-2xl border border-[#E0E3E7] bg-white p-4 flex flex-col gap-2 shadow-sm ${color}`}>
+      <div className="flex items-start justify-between">
+        <div className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">{title}</div>
+        <div className="text-xl">{icon}</div>
       </div>
+      <p className="font-mono text-2xl text-[#2F5C8C]">{value}</p>
+      <p className="text-xs text-slate-500">Status atualizado</p>
     </div>
   );
 };
@@ -28,10 +29,10 @@ const StatCard: React.FC<{ title: string; value: number; color: string; icon: st
 const QuickActionButton: React.FC<{ text: string, icon: React.ReactNode, onClick: () => void }> = ({ text, icon, onClick }) => (
     <button
         onClick={onClick}
-        className="flex items-center space-x-3 text-left w-full bg-gray-50 p-4 rounded-lg border border-gray-200 hover:bg-gray-100 hover:border-indigo-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        className="flex items-center space-x-3 text-left w-full rounded-full border border-[#D5D8DC] bg-[#F4F6F8] px-3 py-2 text-sm text-slate-700 hover:bg-[#E4E7EB] hover:border-[#C9CDD2] transition-all duration-200"
     >
-        <div className="text-indigo-600">{icon}</div>
-        <span className="font-semibold text-gray-700">{text}</span>
+        <div className="text-[#2F5C8C]">{icon}</div>
+        <span className="font-semibold text-slate-800">{text}</span>
     </button>
 );
 
@@ -44,49 +45,51 @@ const ClipboardPlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" classNam
 export const Dashboard: React.FC<DashboardProps> = ({ stats, documentos, documentoTipos, empresas, selectedEmpresaNome, onImport, onRegister, onRegisterExame }) => {
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-1">Dashboard</h2>
-        <p className="text-md text-indigo-600 font-semibold">{selectedEmpresaNome}</p>
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">Visão Geral</p>
+        <h2 className="text-lg font-semibold text-slate-800">Dashboard</h2>
+        <p className="text-sm text-[#2F5C8C] font-medium">{selectedEmpresaNome}</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-        <StatCard title="Total Funcionários" value={stats.totalFuncionarios} color="border-azul-serenity" icon="👥" />
-        <StatCard title="Exames Atrasados" value={stats.examesAtrasados} color="border-vermelho-suave" icon="⚠️" />
-        <StatCard title="Vencendo em 30 dias" value={stats.vencendo30Dias} color="border-amarelo-suave" icon="📅" />
-        <StatCard title="Em dia" value={stats.emDia} color="border-verde-menta" icon="✅" />
-        <StatCard title="Assinaturas Pendentes" value={stats.assinaturasPendentes} color="border-indigo-300" icon="✍️" />
-        
-        {/* Contract Stats Card */}
-         <div className="bg-white p-5 rounded-xl shadow-md flex items-start border-l-4 border-lilas-pastel xl:col-span-2">
-            <div className="text-3xl mr-4 pt-1">📜</div>
-            <div className="flex-grow text-center">
-                <p className="text-sm text-gray-500 font-medium">Contratos</p>
-                <p className="text-3xl font-bold text-gray-800">{stats.totalContratos}</p>
-                {/* Sub-stats Breakdown */}
-                <div className="flex justify-between items-center pt-2 border-t mt-2 space-x-2">
-                    <div className="text-center flex-1">
-                        <p className="text-xs text-green-600 font-medium">EM DIA</p>
-                        <p className="text-lg font-bold text-green-600">{stats.contratosAtivos}</p>
-                    </div>
-                    <div className="text-center flex-1">
-                        <p className="text-xs text-yellow-600 font-medium">VENCENDO</p>
-                        <p className="text-lg font-bold text-yellow-600">{stats.contratosVencendo}</p>
-                    </div>
-                    <div className="text-center flex-1">
-                        <p className="text-xs text-red-600 font-medium">VENCIDOS</p>
-                        <p className="text-lg font-bold text-red-600">{stats.contratosVencidos}</p>
-                    </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Total Funcionários" value={stats.totalFuncionarios} color="" icon="👥" />
+        <StatCard title="Exames Atrasados" value={stats.examesAtrasados} color="" icon="⚠️" />
+        <StatCard title="Vencendo em 30 dias" value={stats.vencendo30Dias} color="" icon="📅" />
+        <StatCard title="Em dia" value={stats.emDia} color="" icon="✅" />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <StatCard title="Assinaturas Pendentes" value={stats.assinaturasPendentes} color="" icon="✍️" />
+        <div className="rounded-2xl border border-[#E0E3E7] bg-white p-5 shadow-sm flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">Contratos</p>
+                    <p className="font-mono text-2xl text-[#2F5C8C]">{stats.totalContratos}</p>
+                </div>
+                <span className="text-2xl">📜</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#E0E3E7]">
+                <div className="rounded-xl bg-[#E3F3EA] p-3 text-center">
+                    <p className="text-[11px] font-semibold text-[#2F6E4A]">Em dia</p>
+                    <p className="font-mono text-lg text-[#2F6E4A]">{stats.contratosAtivos}</p>
+                </div>
+                <div className="rounded-xl bg-[#FFF7E6] p-3 text-center">
+                    <p className="text-[11px] font-semibold text-[#8A5B2F]">Vencendo</p>
+                    <p className="font-mono text-lg text-[#8A5B2F]">{stats.contratosVencendo}</p>
+                </div>
+                <div className="rounded-xl bg-[#FDECEC] p-3 text-center">
+                    <p className="text-[11px] font-semibold text-[#8A1F1F]">Vencidos</p>
+                    <p className="font-mono text-lg text-[#8A1F1F]">{stats.contratosVencidos}</p>
                 </div>
             </div>
         </div>
-      </div>
-      
-      <div className="bg-white p-6 rounded-xl shadow-md">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Ações Rápidas</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <QuickActionButton text="Importar Planilha" icon={<ImportIcon />} onClick={onImport} />
-            <QuickActionButton text="Cadastrar Funcionário" icon={<UserPlusIcon />} onClick={onRegister} />
-            <QuickActionButton text="Registrar Exame" icon={<ClipboardPlusIcon />} onClick={onRegisterExame} />
+        <div className="rounded-2xl border border-[#E0E3E7] bg-white p-5 shadow-sm flex flex-col gap-3">
+            <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">Ações Rápidas</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
+                <QuickActionButton text="Importar Planilha" icon={<ImportIcon />} onClick={onImport} />
+                <QuickActionButton text="Cadastrar Funcionário" icon={<UserPlusIcon />} onClick={onRegister} />
+                <QuickActionButton text="Registrar Exame" icon={<ClipboardPlusIcon />} onClick={onRegisterExame} />
+            </div>
         </div>
       </div>
 
