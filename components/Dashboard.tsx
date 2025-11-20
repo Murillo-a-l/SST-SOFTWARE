@@ -31,26 +31,6 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode }
 };
 
 const QuickActionButton: React.FC<{ text: string; icon: React.ReactNode; onClick: () => void }> = ({ text, icon, onClick }) => (
-  <Button
-    variant="secondary"
-    className="w-full rounded-full justify-start px-4"
-    onClick={onClick}
-  >
-    <span className="text-[#2F5C8C]">{icon}</span>
-    <span className="font-semibold text-slate-800">{text}</span>
-  </Button>
-    <div className={`rounded-2xl border border-[#E0E3E7] bg-white p-4 flex flex-col gap-2 shadow-sm ${color}`}>
-      <div className="flex items-start justify-between">
-        <div className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">{title}</div>
-        <div className="text-xl">{icon}</div>
-      </div>
-      <p className="font-mono text-2xl text-[#2F5C8C]">{value}</p>
-      <p className="text-xs text-slate-500">Status atualizado</p>
-    </div>
-  );
-};
-
-const QuickActionButton: React.FC<{ text: string, icon: React.ReactNode, onClick: () => void }> = ({ text, icon, onClick }) => (
     <button
         onClick={onClick}
         className="flex items-center space-x-3 text-left w-full rounded-full border border-[#D5D8DC] bg-[#F4F6F8] px-3 py-2 text-sm text-slate-700 hover:bg-[#E4E7EB] hover:border-[#C9CDD2] transition-all duration-200"

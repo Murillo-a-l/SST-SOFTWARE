@@ -36,7 +36,6 @@ export const DesativadosTab: React.FC<DesativadosTabProps> = ({ funcionarios, on
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <Input
         <input
           type="text"
           placeholder="🔍 Filtrar por nome, matrícula, cargo..."
