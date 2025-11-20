@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Ambiente } from '../../types';
 import { ambienteService } from '../../services/dbService';
 

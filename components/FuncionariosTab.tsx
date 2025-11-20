@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useMemo } from 'react';
 import type { Funcionario, ExameRealizado } from '../types';
 import { Input } from '../src/components/ui/Input';

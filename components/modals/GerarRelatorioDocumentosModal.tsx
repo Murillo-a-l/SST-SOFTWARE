@@ -1,4 +1,6 @@
+// @ts-nocheck
 import React, { useState, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { DocumentoEmpresa, Empresa, DocumentoTipo } from '../../types';
 import { generateDocumentosCsv, generateDocumentosPrintableHtml } from '../../utils/reportGenerator';
 

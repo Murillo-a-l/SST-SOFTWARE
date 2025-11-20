@@ -247,13 +247,13 @@ router.post('/emitir', async (req, res) => {
                 sobrenomeNomeFantasia: empresa.nomeFantasia,
                 logradouro: empresa.endereco || 'Não informado',
                 numero: '',
-                bairro: empresa.bairro || '',
+                bairro: '',
                 cidade: '8055', // Código TOM - TODO: buscar do cadastro da empresa
-                uf: empresa.uf || 'SC',
-                cep: empresa.cep || '',
-                email: empresa.email || '',
-                ddd: empresa.telefone?.substring(0, 2) || '',
-                telefone: empresa.telefone?.substring(2) || ''
+                uf: '',
+                cep: '',
+                email: empresa.contatoEmail || '',
+                ddd: empresa.contatoTelefone?.substring(0, 2) || '',
+                telefone: empresa.contatoTelefone?.substring(2) || ''
             },
             itens: servicosPrestados.map((sp: any) => ({
                 tributaMunicipioPrestador: 1,
@@ -285,7 +285,7 @@ router.post('/emitir', async (req, res) => {
                 dataEmissao: dataHoje,
                 valor: new Decimal(valorTotal),
                 descricaoServicos: servicosPrestados.map((sp: any) => sp.servico.nome).join(', '),
-                status: 'EMITIDA',
+                status: 'AUTORIZADA',
                 xml: '', // TODO: armazenar XML gerado
                 pdf: response.linkNfse || null
             }
