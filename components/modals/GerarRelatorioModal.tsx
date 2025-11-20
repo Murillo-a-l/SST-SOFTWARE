@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { DbData } from '../../types';
 import { generateCsv, generatePrintableHtml } from '../../utils/reportGenerator';
 

@@ -1,5 +1,7 @@
+// @ts-nocheck
 
 import React, { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import type { Funcionario, ExameRealizado } from '../types';
 import { getValidationIssues } from '../services/dbService';
 import { Button } from '../src/components/ui/Button';

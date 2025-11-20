@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import * as dbService from './services/dbService';

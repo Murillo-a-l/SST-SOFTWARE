@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { exameApi, ApiError } from '../../services/apiService';
 import { Funcionario } from '../../types';

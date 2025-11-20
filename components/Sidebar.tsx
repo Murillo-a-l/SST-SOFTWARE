@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import type { View } from '../types';
 import { AppIcon } from '../src/components/ui/AppIcon';

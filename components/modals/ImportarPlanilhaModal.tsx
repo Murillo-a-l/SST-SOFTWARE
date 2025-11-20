@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import * as dbService from '../../services/dbService';
 import { Funcionario, ExameRealizado, Empresa } from '../../types';
 

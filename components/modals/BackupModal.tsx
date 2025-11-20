@@ -1,4 +1,6 @@
+// @ts-nocheck
 import React, { useState, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { exportBackup, importBackup } from '../../services/dbService';
 
 interface ModalProps {

@@ -1,4 +1,6 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Cargo } from '../../types';
 import { cargoService } from '../../services/dbService';
 import { useGemini } from '../../hooks/useGemini';

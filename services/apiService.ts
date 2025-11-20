@@ -446,6 +446,7 @@ interface CreateDocumentoDto {
   nome: string;
   arquivoUrl?: string; // File URL
   arquivoBase64?: string; // Base64 encoded file (alternative to arquivoUrl)
+  arquivoAssinadoBase64?: string | null;
   observacoes?: string;
   temValidade?: boolean;
   dataInicio?: string | null;
@@ -456,6 +457,8 @@ interface CreateDocumentoDto {
   requerAssinaturaDeId?: number | null;
   solicitadoPorId?: number | null;
   dataSolicitacaoAssinatura?: string;
+  dataConclusaoAssinatura?: string | null;
+  observacoesAssinatura?: string;
 }
 
 export const documentoApi = {

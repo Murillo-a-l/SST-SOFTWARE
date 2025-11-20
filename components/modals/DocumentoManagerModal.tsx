@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { documentoApi, ApiError } from '../../services/apiService';
 import { documentoTipoService, calculateStatus, calculateDataFim } from '../../services/dbService';

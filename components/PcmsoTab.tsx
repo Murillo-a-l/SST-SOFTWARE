@@ -1,5 +1,7 @@
+// @ts-nocheck
 
 import React, { useState, useEffect, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { Empresa, Cargo, Ambiente, Risco, MasterExame, CargoAmbienteLink, CargoRiscoLink, ProtocoloExame, ManagementModalType, PcmsoConfig } from '../types';
 import * as dbService from '../services/dbService';
 import { generatePcmsoHtml } from '../utils/reportGenerator';

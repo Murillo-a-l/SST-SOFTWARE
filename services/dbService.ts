@@ -85,10 +85,10 @@ const runMigration = () => {
             razaoSocial: defaultConfig.empresa_nome,
             nomeFantasia: defaultConfig.empresa_nome,
             cnpj: defaultConfig.cnpj,
-            medico_nome: defaultConfig.medico_nome,
-            medico_crm: defaultConfig.medico_crm,
-            inicio_validade: defaultConfig.inicio_validade,
-            revisar_ate: defaultConfig.revisar_ate,
+            medicoNome: defaultConfig.medico_nome,
+            medicoCrm: defaultConfig.medico_crm,
+            inicioValidade: defaultConfig.inicio_validade,
+            revisarAte: defaultConfig.revisar_ate,
         };
 
         const newCompany = createCrudService<Empresa>('empresas').add(defaultCompany);
@@ -112,7 +112,7 @@ const runMigration = () => {
     let signatureMigrationCount = 0;
     db.documentosEmpresa.forEach(doc => {
         if (typeof doc.statusAssinatura === 'undefined') {
-            doc.statusAssinatura = 'Nao Requer';
+            doc.statusAssinatura = 'NAO_REQUER';
             doc.requerAssinaturaDeId = null;
             doc.solicitadoPorId = null;
             doc.dataSolicitacaoAssinatura = null;
@@ -288,7 +288,7 @@ export const documentoEmpresaService = {
         const newItem: DocumentoEmpresa = {
             ...newItemData,
             id: newId,
-            statusAssinatura: newItemData.requerAssinaturaDeId ? 'Pendente' : 'Nao Requer',
+        statusAssinatura: newItemData.requerAssinaturaDeId ? 'PENDENTE' : 'NAO_REQUER',
             dataSolicitacaoAssinatura: newItemData.requerAssinaturaDeId ? new Date().toISOString() : null,
             dataConclusaoAssinatura: null,
             observacoesAssinatura: '',
@@ -310,11 +310,11 @@ export const documentoEmpresaService = {
             // Logic to update signature status if assignee is changed
             if ('requerAssinaturaDeId' in updatedData) {
                 if (updatedData.requerAssinaturaDeId) {
-                    updatedItem.statusAssinatura = 'Pendente';
+                    updatedItem.statusAssinatura = 'PENDENTE';
                     updatedItem.dataSolicitacaoAssinatura = new Date().toISOString();
                     updatedItem.dataConclusaoAssinatura = null;
                 } else {
-                    updatedItem.statusAssinatura = 'Nao Requer';
+                    updatedItem.statusAssinatura = 'NAO_REQUER';
                     updatedItem.dataSolicitacaoAssinatura = null;
                 }
             }
@@ -338,7 +338,7 @@ export const documentoEmpresaService = {
 
 export const getAssinaturasPendentes = (userId: number): DocumentoEmpresa[] => {
     const db = loadDb();
-    return db.documentosEmpresa.filter(doc => doc.requerAssinaturaDeId === userId && doc.statusAssinatura === 'Pendente');
+    return db.documentosEmpresa.filter(doc => doc.requerAssinaturaDeId === userId && doc.statusAssinatura === 'PENDENTE');
 }
 
 
