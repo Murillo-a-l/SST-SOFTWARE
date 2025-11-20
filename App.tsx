@@ -649,7 +649,7 @@ const App: React.FC = () => {
     }
     
     if (!authChecked) {
-        return <div className="flex items-center justify-center h-screen bg-gray-100">Carregando...</div>;
+        return <div className="flex items-center justify-center h-screen bg-[#F4F6F8] text-slate-700 font-sans">Carregando...</div>;
     }
 
     if (!currentUser) {
@@ -657,7 +657,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="bg-gray-100 min-h-screen font-sans flex">
+        <div className="min-h-screen bg-[#F4F6F8] text-slate-800 font-sans flex">
             <Toaster
                 position="top-right"
                 toastOptions={{
@@ -690,9 +690,13 @@ const App: React.FC = () => {
                 onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             />
 
-            <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
-                <Header 
-                    onOpenNotifications={() => handleOpenModal('notifications')} 
+            <div
+                className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
+                    isSidebarCollapsed ? 'ml-20' : 'ml-64'
+                }`}
+            >
+                <Header
+                    onOpenNotifications={() => handleOpenModal('notifications')}
                     notificationCount={notifications.length}
                     empresas={data.empresas}
                     selectedEmpresaId={selectedEmpresaId}
@@ -700,8 +704,10 @@ const App: React.FC = () => {
                     user={currentUser}
                     onLogout={handleLogout}
                 />
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                     {renderContent()}
+                <main className="flex-1 overflow-y-auto">
+                    <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+                        {renderContent()}
+                    </div>
                 </main>
             </div>
 

@@ -2,6 +2,7 @@
 import React from 'react';
 import { NotificationBell } from './NotificationBell';
 import { Empresa, User } from '../types';
+import { AppIcon } from '../src/components/ui/AppIcon';
 
 interface HeaderProps {
     onOpenNotifications: () => void;
@@ -12,9 +13,6 @@ interface HeaderProps {
     user: User | null;
     onLogout: () => void;
 }
-
-const BuildingIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" /></svg>;
-const LogoutIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" /></svg>;
 
 export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, notificationCount, empresas, selectedEmpresaId, onEmpresaChange, user, onLogout }) => {
   const sortedEmpresas = React.useMemo(() => {
@@ -37,36 +35,46 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, notificatio
   }, [empresas]);
 
   return (
-    <header className="bg-white shadow-sm flex-shrink-0">
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-4">
-              <div className="flex items-center">
-                  <BuildingIcon />
-                  <select
-                      value={selectedEmpresaId === null ? 'all' : selectedEmpresaId}
-                      onChange={(e) => {
-                          const value = e.target.value;
-                          onEmpresaChange(value === 'all' ? null : Number(value));
-                      }}
-                      className="font-semibold text-gray-700 bg-transparent border-0 focus:ring-0"
-                      aria-label="Selecionar Contexto da Empresa"
-                  >
-                      <option value="all">Visão Geral (Todas as Empresas)</option>
-                      {sortedEmpresas.map(e => (
-                        <option key={e.id} value={e.id}>
-                          {e.isFilial ? `↳ ${e.name}` : e.name}
-                        </option>
-                      ))}
-                  </select>
+    <header className="h-16 bg-white border-b border-[#D5D8DC] flex-shrink-0">
+      <div className="w-full max-w-7xl mx-auto h-full px-6">
+        <div className="flex h-full items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 rounded-xl bg-[#F4F6F8] border border-[#D5D8DC] px-3 py-2 shadow-sm">
+              <AppIcon name="building" className="h-5 w-5 text-[#6A7381]" />
+              <div className="flex flex-col">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-[#7B8EA3]">Contexto</span>
+                <select
+                  value={selectedEmpresaId === null ? 'all' : selectedEmpresaId}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    onEmpresaChange(value === 'all' ? null : Number(value));
+                  }}
+                  className="text-sm font-semibold text-slate-800 bg-transparent border-0 focus:ring-0 focus:outline-none"
+                  aria-label="Selecionar Contexto da Empresa"
+                >
+                  <option value="all">Visão Geral (Todas as Empresas)</option>
+                  {sortedEmpresas.map(e => (
+                    <option key={e.id} value={e.id}>
+                      {e.isFilial ? `↳ ${e.name}` : e.name}
+                    </option>
+                  ))}
+                </select>
               </div>
+            </div>
           </div>
+
           <div className="flex items-center gap-4">
             <NotificationBell count={notificationCount} onClick={onOpenNotifications} />
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Olá, <span className="font-semibold">{user?.nome || 'Usuário'}</span></span>
-              <button onClick={onLogout} title="Sair" className="p-2 text-gray-500 hover:text-red-600 rounded-full hover:bg-red-50 focus:outline-none">
-                  <LogoutIcon />
+            <div className="flex items-center gap-3 rounded-full bg-[#F4F6F8] border border-[#D5D8DC] px-3 py-1.5">
+              <span className="text-sm text-slate-700">
+                Olá, <span className="font-semibold">{user?.nome || 'Usuário'}</span>
+              </span>
+              <button
+                onClick={onLogout}
+                title="Sair"
+                className="p-1.5 text-[#7B8EA3] hover:text-[#D97777] rounded-full hover:bg-[#FDECEC] focus:outline-none transition-colors"
+              >
+                <AppIcon name="logout" className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -74,4 +82,4 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, notificatio
       </div>
     </header>
   );
-};
+  };
