@@ -655,7 +655,7 @@ const App: React.FC = () => {
     }
     
     if (!authChecked) {
-        return <div className="flex items-center justify-center h-screen bg-[#F4F6F8] text-slate-700 font-sans">Carregando...</div>;
+        return <div className="flex items-center justify-center h-screen bg-[#F2F0EB] text-[#1F2A3D] font-sans">Carregando...</div>;
     }
 
     if (!currentUser) {
@@ -663,7 +663,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F4F6F8] text-slate-800 font-sans flex">
+        <div className="min-h-screen text-[#1F2A3D] font-sans flex bg-gradient-to-br from-[#F2F0EB]/60 via-[#F7F9FC]/80 to-[#EEF2F7]/70">
             <Toaster
                 position="top-right"
                 toastOptions={{
