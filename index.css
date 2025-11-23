@@ -1,8 +1,73 @@
 body {
-  background-color: #F4F6F8;
-  color: #2F343A;
+  background: radial-gradient(circle at 20% 20%, rgba(192, 121, 84, 0.16), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(15, 76, 92, 0.15), transparent 32%),
+    linear-gradient(135deg, #f4f0e9 0%, #f7f9fc 60%, #eef2f7 100%);
+  color: #1f2a3d;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   letter-spacing: 0.01em;
+  min-height: 100vh;
+  background-attachment: fixed;
+}
+
+input[type='text'],
+input[type='password'],
+input[type='email'],
+input[type='number'],
+input[type='date'],
+input[type='tel'],
+input[type='search'],
+input[type='url'],
+select,
+textarea {
+  border: 1px solid #d4dce6 !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(247, 249, 252, 0.9)) !important;
+  box-shadow: 0 14px 36px rgba(12, 26, 45, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  color: #1f2a3d !important;
+  transition: all 180ms ease;
+}
+
+input[type='text']::placeholder,
+input[type='password']::placeholder,
+input[type='email']::placeholder,
+input[type='number']::placeholder,
+input[type='date']::placeholder,
+input[type='tel']::placeholder,
+input[type='search']::placeholder,
+input[type='url']::placeholder,
+textarea::placeholder {
+  color: #6b7a92;
+}
+
+input[type='text']:focus,
+input[type='password']:focus,
+input[type='email']:focus,
+input[type='number']:focus,
+input[type='date']:focus,
+input[type='tel']:focus,
+input[type='search']:focus,
+input[type='url']:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #0f4c5c !important;
+  box-shadow: 0 18px 40px rgba(12, 26, 45, 0.14), 0 0 0 3px rgba(15, 76, 92, 0.16) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 247, 250, 0.96)) !important;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%230F4C5C' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px;
+  padding-right: 40px !important;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
 }
 
 a {
