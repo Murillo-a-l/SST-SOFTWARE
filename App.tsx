@@ -46,6 +46,7 @@ import { AssinaturaDocumentoModal } from './components/modals/AssinaturaDocument
 import { ConfiguracaoNFSeModal } from './components/modals/ConfiguracaoNFSeModal';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { summarizeText, suggestExams } from "./services/geminiService";
+import { colors } from './src/styles/tokens';
 
 
 type FuncionarioSubTab = 'ativos' | 'desativados' | 'validacao';
@@ -655,7 +656,7 @@ const App: React.FC = () => {
     }
     
     if (!authChecked) {
-        return <div className="flex items-center justify-center h-screen bg-[#F4F6F8] text-slate-700 font-sans">Carregando...</div>;
+        return <div className="flex items-center justify-center h-screen bg-[#F2F0EB] text-[#1F2A3D] font-sans">Carregando...</div>;
     }
 
     if (!currentUser) {
@@ -663,7 +664,10 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#F4F6F8] text-slate-800 font-sans flex">
+        <div
+            className="min-h-screen font-sans flex"
+            style={{ backgroundColor: colors.background.body, color: colors.text.primary }}
+        >
             <Toaster
                 position="top-right"
                 toastOptions={{
@@ -707,7 +711,7 @@ const App: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 <main className="flex-1 overflow-y-auto">
-                    <div className="w-full px-6 py-6 space-y-6">
+                    <div className="w-full max-w-7xl mx-auto px-6 py-6 space-y-6">
                         {renderContent()}
                     </div>
                 </main>

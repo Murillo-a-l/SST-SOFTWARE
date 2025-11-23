@@ -2,6 +2,7 @@
 import React from 'react';
 import type { View } from '../types';
 import { AppIcon } from '../src/components/ui/AppIcon';
+import { colors, shadows, typography } from '../src/styles/tokens';
 
 interface SidebarProps {
   activeView: View;
@@ -26,13 +27,13 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ iconName, label, view, isActi
         onClick={() => onClick(view)}
         className={`group flex items-center w-full text-left px-3 py-2 rounded-xl transition-all duration-200 ${
           isActive
-            ? 'bg-[#E8ECF0] border-l-4 border-[#3A6EA5] text-[#2F5C8C] font-semibold shadow-sm'
-            : 'text-slate-700 hover:bg-[#F1F3F5] hover:text-slate-900'
+            ? `bg-[${colors.background.surface}] text-[${colors.accent.primary}] border border-[${colors.accent.primary}] shadow-[${shadows.soft}]`
+            : `text-[${colors.text.secondary}] border border-transparent hover:border-[${colors.border.subtle}] hover:bg-[${colors.background.surfaceMuted}]`
         } ${isCollapsed ? 'justify-center px-2' : ''}`}
         title={isCollapsed ? label : ''}
       >
-        <AppIcon name={iconName} className={`w-5 h-5 ${isActive ? 'text-[#2F5C8C]' : 'text-[#6A7381]'}`} />
-        {!isCollapsed && <span className="ml-3 whitespace-nowrap text-sm font-medium">{label}</span>}
+        <AppIcon name={iconName} className={`w-5 h-5 ${isActive ? `text-[${colors.accent.primary}]` : `text-[${colors.text.muted}]`}`} />
+        {!isCollapsed && <span className="ml-3 whitespace-nowrap text-sm font-semibold tracking-wide">{label}</span>}
       </button>
     </li>
   );
@@ -50,14 +51,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
   ];
 
   return (
-    <aside className={`fixed top-0 left-0 h-screen bg-white border-r border-[#D5D8DC] flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20 px-3' : 'w-60 px-4'}`}>
-      <div className={`flex items-center h-16 border-b border-[#E0E3E7] ${isCollapsed ? 'justify-center' : 'justify-between'} py-4 mb-4`}>
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'}`}>
-          <AppIcon name="dashboard" className="h-6 w-6 text-[#2F5C8C]" />
+    <aside
+      className={`fixed top-0 left-0 h-screen bg-gradient-to-b from-[${colors.accent.primary}] via-[${colors.accent.primary}] to-[${colors.accent.primary}]/85 text-white/90 backdrop-blur-xl flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out shadow-[${shadows.elevated}] ${
+        isCollapsed ? 'w-[72px] px-3' : 'w-60 px-4'
+      }`}
+    >
+      <div
+        className={`flex items-center h-20 border-b border-white/15 ${isCollapsed ? 'justify-center' : 'justify-between'} py-5 mb-5`}
+      >
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20">
+            <AppIcon name="dashboard" className="h-5 w-5" />
+          </div>
           {!isCollapsed && (
             <div className="leading-tight">
-              <p className="text-sm font-semibold text-slate-800">Saude Ocupacional</p>
-              <p className="text-xs text-slate-500">Painel Clinico</p>
+              <p className="text-sm font-semibold">Ocupalli</p>
+              <p className={`${typography.mono} text-[${colors.accent.retro}]`}>system</p>
             </div>
           )}
         </div>
@@ -77,16 +86,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
           ))}
         </ul>
       </nav>
-      <div className="mt-auto pt-4 border-t border-[#E0E3E7]">
+      <div className="mt-auto pt-4 border-t border-white/15">
         <button
           onClick={onToggle}
-          className={`flex items-center w-full px-3 py-2 rounded-full border border-[#D5D8DC] bg-white text-slate-600 hover:bg-[#F1F3F5] transition-colors duration-200 ${
+          className={`flex items-center w-full px-3 py-2 rounded-full bg-white/10 text-white transition-all duration-200 hover:bg-white/20 ${
             isCollapsed ? 'justify-center' : 'justify-between'
           }`}
           title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
         >
-          {!isCollapsed && <span className="text-sm font-medium">{isCollapsed ? 'Expandir' : 'Recolher'} menu</span>}
-          <span className="w-5 h-5 text-[#6A7381]">
+          {!isCollapsed && <span className="text-sm font-semibold">{isCollapsed ? 'Expandir' : 'Recolher'} menu</span>}
+          <span className="w-5 h-5">
             {isCollapsed ? <AppIcon name="chevron-right" /> : <AppIcon name="chevron-left" />}
           </span>
         </button>

@@ -3,6 +3,7 @@ import { NotificationBell } from './NotificationBell';
 import { Empresa, User } from '../types';
 import { AppIcon } from '../src/components/ui/AppIcon';
 import { CatalystCombobox } from './ui/CatalystCombobox';
+import { colors, typography } from '../src/styles/tokens';
 
 interface HeaderProps {
   onOpenNotifications: () => void;
@@ -49,18 +50,26 @@ export const Header: React.FC<HeaderProps> = ({
   const selectedValue = selectedEmpresaId === null ? 'all' : selectedEmpresaId;
 
   return (
-    <header className="h-16 bg-white border-b border-[#D5D8DC] flex-shrink-0">
-      <div className="w-full h-full px-6">
-        <div className="flex items-center justify-between h-full">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="group flex items-center gap-3 flex-1 min-w-[280px] max-w-md rounded-xl bg-white border border-[#E0E3E7] px-3 py-2 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#F0F2F5] border border-[#D5D8DC] text-[#2F5C8C]">
-                <AppIcon name="building" className="h-5 w-5" />
+    <header className="h-16 flex-shrink-0 px-4 lg:px-6 border-b border-[${colors.border.subtle}] bg-[${colors.background.surface}] shadow-[0_6px_18px_rgba(12,26,45,0.04)]">
+      <div className="flex h-full items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-center gap-3 rounded-2xl border border-[${colors.border.subtle}] bg-[${colors.background.surfaceMuted}] px-3 py-2 shadow-[0_4px_12px_rgba(12,26,45,0.06)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[${colors.accent.primary}] text-white shadow-inner">
+              <AppIcon name="building" className="h-5 w-5" />
+            </div>
+            <div className="leading-tight">
+              <p className={`${typography.mono} text-[${colors.accent.secondary}]`}>OCUPALLI</p>
+              <p className={`${typography.subtitle} text-[${colors.text.primary}]`}>Painel Clínico</p>
+            </div>
+          </div>
+
+          <div className="group relative flex-1 min-w-[260px] max-w-xl rounded-2xl border border-[${colors.border.subtle}] bg-[${colors.background.surface}] px-3 py-2 shadow-[0_10px_24px_rgba(12,26,45,0.06)] focus-within:border-[${colors.accent.primary}]">
+            <div className="relative flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[${colors.background.surfaceMuted}] text-[${colors.accent.primary}]">
+                <AppIcon name="building" className="h-4 w-4" />
               </div>
               <div className="relative flex-1">
-                <span className="absolute inset-y-0 right-2 my-auto h-fit px-2 py-1 rounded-full text-[11px] font-semibold bg-[#E8ECF0] text-[#2F343A] transition-colors duration-150 pointer-events-none group-focus-within:bg-[#2F5C8C] group-focus-within:text-white">
-                  Selecionar
-                </span>
+                <span className={`${typography.mono} absolute -top-3 left-2 bg-[${colors.background.surface}] px-2 text-[${colors.accent.secondary}]`}>EMPRESA</span>
                 <CatalystCombobox
                   options={empresaOptions}
                   value={selectedValue}
@@ -69,29 +78,33 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   placeholder="Selecione a empresa..."
                   className="w-full"
-                  inputClassName="bg-[#F4F6F8] border border-[#D5D8DC] py-2 pl-3 pr-24 text-sm font-semibold text-[#2F343A] placeholder:text-[#7B8EA3] focus:ring-2 focus:ring-[#3A6EA5]/30 focus:border-[#3A6EA5] rounded-lg"
+                  inputClassName={`bg-transparent border border-[${colors.border.subtle}] py-2.5 pl-3 pr-24 text-sm font-semibold text-[${colors.text.primary}] placeholder:text-[${colors.text.secondary}] focus:ring-2 focus:ring-[${colors.accent.primary}]/20 focus:border-[${colors.accent.primary}] rounded-xl`}
                   title={empresaOptions.find((opt) => opt.value === selectedValue)?.label || ''}
                 />
-                <span className="absolute -top-2 left-2 bg-white px-2 text-[11px] uppercase tracking-[0.18em] text-[#7B8EA3]">
-                  Empresa
+                <span className="absolute inset-y-0 right-2 my-auto h-fit px-3 py-1 rounded-full text-[11px] font-semibold bg-[${colors.background.surfaceMuted}] text-[${colors.text.secondary}] shadow-sm">
+                  Selecionar
                 </span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <NotificationBell count={notificationCount} onClick={onOpenNotifications} />
-            <div className="flex items-center gap-3 rounded-full bg-[#F4F6F8] border border-[#D5D8DC] px-3 py-1.5">
-              <span className="text-sm text-slate-700">
-                Ola, <span className="font-semibold">{user?.nome || 'Usuario'}</span>
-              </span>
-              <button
-                onClick={onLogout}
-                title="Sair"
-                className="p-1.5 text-[#7B8EA3] hover:text-[#D97777] rounded-full hover:bg-[#FDECEC] focus:outline-none transition-colors"
-              >
-                <AppIcon name="logout" className="h-5 w-5" />
-              </button>
-            </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl border border-[${colors.border.subtle}] bg-[${colors.background.surfaceMuted}] text-[${colors.text.secondary}]">
+            <span className={typography.mono}>SYS · OK</span>
+            <span className="h-2 w-2 rounded-full bg-[${colors.accent.retro}]" />
+          </div>
+          <NotificationBell count={notificationCount} onClick={onOpenNotifications} />
+          <div className="flex items-center gap-3 rounded-full border border-[${colors.border.subtle}] bg-[${colors.background.surface}] px-4 py-1.5 shadow-[0_8px_20px_rgba(12,26,45,0.06)]">
+            <span className="text-sm text-[${colors.text.secondary}]">
+              Olá, <span className="font-semibold text-[${colors.text.primary}]">{user?.nome || 'Usuário'}</span>
+            </span>
+            <button
+              onClick={onLogout}
+              title="Sair"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[${colors.background.surfaceMuted}] text-[${colors.text.secondary}] transition-all duration-150 hover:-translate-y-[1px] hover:bg-[${colors.accent.primary}] hover:text-white focus:outline-none focus:ring-2 focus:ring-[${colors.accent.primary}]/30"
+            >
+              <AppIcon name="logout" className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </div>
