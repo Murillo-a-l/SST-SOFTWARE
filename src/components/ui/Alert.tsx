@@ -9,22 +9,22 @@ interface AlertProps {
 
 const variantClasses = {
     error: {
-        bg: `bg-[${colors.status.danger}]/5 border-[${colors.status.danger}]`,
-        icon: `text-[${colors.status.danger}]`,
-        title: `text-[${colors.text.primary}]`,
-        text: `text-[${colors.text.secondary}]`,
+        bg: `bg-[${colors.danger}]/5 border-[${colors.danger}]`,
+        icon: `text-[${colors.danger}]`,
+        title: `text-[${colors.textPrimary}]`,
+        text: `text-[${colors.textSecondary}]`,
     },
     warning: {
-        bg: `bg-[${colors.status.warning}]/5 border-[${colors.status.warning}]`,
-        icon: `text-[${colors.status.warning}]`,
-        title: `text-[${colors.text.primary}]`,
-        text: `text-[${colors.text.secondary}]`,
+        bg: `bg-[${colors.warning}]/5 border-[${colors.warning}]`,
+        icon: `text-[${colors.warning}]`,
+        title: `text-[${colors.textPrimary}]`,
+        text: `text-[${colors.textSecondary}]`,
     },
     success: {
-        bg: `bg-[${colors.status.success}]/5 border-[${colors.status.success}]`,
-        icon: `text-[${colors.status.success}]`,
-        title: `text-[${colors.text.primary}]`,
-        text: `text-[${colors.text.secondary}]`,
+        bg: `bg-[${colors.success}]/5 border-[${colors.success}]`,
+        icon: `text-[${colors.success}]`,
+        title: `text-[${colors.textPrimary}]`,
+        text: `text-[${colors.textSecondary}]`,
     },
 };
 

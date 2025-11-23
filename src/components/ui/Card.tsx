@@ -1,5 +1,5 @@
 import React from 'react';
-import { colors, shadows, typography } from '../../styles/tokens';
+import { colors } from '../../styles/tokens';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
@@ -10,7 +10,8 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Card: React.FC<CardProps> = ({ title, subtitle, actions, className = '', children, ...rest }) => {
   return (
     <div
-      className={`relative overflow-hidden rounded-3xl border border-[${tokens.colors.borderSoft}] bg-white/85 shadow-[0_20px_60px_rgba(12,26,45,0.08)] backdrop-blur-lg ${className}`}
+      className={`relative overflow-hidden rounded-3xl border bg-white/85 shadow-[0_20px_60px_rgba(12,26,45,0.08)] backdrop-blur-lg ${className}`}
+      style={{ borderColor: colors.borderSoft }}
       {...rest}
     >
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_10%_20%,rgba(192,121,84,0.08),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(15,76,92,0.08),transparent_30%)]" />
