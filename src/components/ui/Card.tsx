@@ -1,5 +1,5 @@
 import React from 'react';
-import { tokens } from '../../styles/tokens';
+import { colors, shadows, typography } from '../../styles/tokens';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;

@@ -46,6 +46,7 @@ import { AssinaturaDocumentoModal } from './components/modals/AssinaturaDocument
 import { ConfiguracaoNFSeModal } from './components/modals/ConfiguracaoNFSeModal';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { summarizeText, suggestExams } from "./services/geminiService";
+import { colors } from './src/styles/tokens';
 
 
 type FuncionarioSubTab = 'ativos' | 'desativados' | 'validacao';
@@ -707,7 +708,7 @@ const App: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 <main className="flex-1 overflow-y-auto">
-                    <div className="w-full px-6 py-6 space-y-6">
+                    <div className="w-full max-w-7xl mx-auto px-6 py-6 space-y-6">
                         {renderContent()}
                     </div>
                 </main>

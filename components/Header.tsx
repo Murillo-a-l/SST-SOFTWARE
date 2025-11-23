@@ -3,6 +3,7 @@ import { NotificationBell } from './NotificationBell';
 import { Empresa, User } from '../types';
 import { AppIcon } from '../src/components/ui/AppIcon';
 import { CatalystCombobox } from './ui/CatalystCombobox';
+import { colors, typography } from '../src/styles/tokens';
 
 interface HeaderProps {
   onOpenNotifications: () => void;

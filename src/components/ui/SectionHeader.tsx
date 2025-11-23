@@ -1,4 +1,5 @@
 import React from 'react';
+import { colors, typography } from '../../styles/tokens';
 
 interface SectionHeaderProps {
   label?: string;

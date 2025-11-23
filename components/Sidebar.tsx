@@ -2,6 +2,7 @@
 import React from 'react';
 import type { View } from '../types';
 import { AppIcon } from '../src/components/ui/AppIcon';
+import { colors, shadows, typography } from '../src/styles/tokens';
 
 interface SidebarProps {
   activeView: View;

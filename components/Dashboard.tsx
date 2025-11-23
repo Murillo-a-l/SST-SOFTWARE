@@ -5,6 +5,7 @@ import { Card } from '../src/components/ui/Card';
 import { Button } from '../src/components/ui/Button';
 import { SectionHeader } from '../src/components/ui/SectionHeader';
 import { AppIcon } from '../src/components/ui/AppIcon';
+import { colors, typography } from '../src/styles/tokens';
 
 interface DashboardProps {
   stats: Stats;
