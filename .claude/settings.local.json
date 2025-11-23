@@ -12,7 +12,9 @@
       "Bash(for endpoint in exames documentos servicos-prestados cobrancas nfes)",
       "Bash(do echo \"=== $endpoint ===\")",
       "Bash(python:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(sc query:*)"
     ],
     "deny": [],
     "ask": []

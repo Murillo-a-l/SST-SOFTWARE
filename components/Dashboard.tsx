@@ -19,7 +19,7 @@ interface DashboardProps {
 
 const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode }> = ({ title, value, icon }) => {
   return (
-    <Card className="flex flex-col gap-2" subtitle={title}>
+    <Card className="flex flex-col gap-2">
       <div className="flex items-start justify-between">
         <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">{title}</p>
         <div className="text-xl text-[#6A7381]">{icon}</div>
@@ -31,15 +31,16 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ReactNode }
 };
 
 const QuickActionButton: React.FC<{ text: string; icon: React.ReactNode; onClick: () => void }> = ({ text, icon, onClick }) => (
-    <button
-        onClick={onClick}
-        className="flex items-center space-x-3 text-left w-full rounded-full border border-[#D5D8DC] bg-[#F4F6F8] px-3 py-2 text-sm text-slate-700 hover:bg-[#E4E7EB] hover:border-[#C9CDD2] transition-all duration-200"
-    >
-        <div className="text-[#2F5C8C]">{icon}</div>
-        <span className="font-semibold text-slate-800">{text}</span>
-    </button>
+  <Button
+    variant="secondary"
+    size="md"
+    className="w-full justify-start rounded-full"
+    icon={icon}
+    onClick={onClick}
+  >
+    <span className="font-semibold text-slate-800">{text}</span>
+  </Button>
 );
-
 
 export const Dashboard: React.FC<DashboardProps> = ({ stats, documentos, documentoTipos, empresas, selectedEmpresaNome, onImport, onRegister, onRegisterExame }) => {
   return (
@@ -48,20 +49,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, documentos, documen
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Total Funcionários" value={stats.totalFuncionarios} icon={<AppIcon name="users" />} />
-        <StatCard title="Exames Atrasados" value={stats.examesAtrasados} icon={<span>⚠️</span>} />
-        <StatCard title="Vencendo em 30 dias" value={stats.vencendo30Dias} icon={<span>📅</span>} />
-        <StatCard title="Em dia" value={stats.emDia} icon={<span>✅</span>} />
+        <StatCard title="Exames Atrasados" value={stats.examesAtrasados} icon={<AppIcon name="clipboard" />} />
+        <StatCard title="Vencendo em 30 dias" value={stats.vencendo30Dias} icon={<AppIcon name="document" />} />
+        <StatCard title="Em dia" value={stats.emDia} icon={<AppIcon name="check" />} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <StatCard title="Assinaturas Pendentes" value={stats.assinaturasPendentes} icon={<span>✍️</span>} />
+        <StatCard title="Assinaturas Pendentes" value={stats.assinaturasPendentes} icon={<AppIcon name="document" />} />
         <Card className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">Contratos</p>
               <p className="font-mono text-2xl text-[#2F5C8C]">{stats.totalContratos}</p>
             </div>
-            <span className="text-2xl text-[#6A7381]">📜</span>
+            <AppIcon name="document" className="text-[#6A7381] h-5 w-5" />
           </div>
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#E0E3E7]">
             <div className="rounded-xl bg-[#E3F3EA] p-3 text-center">
@@ -89,7 +90,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ stats, documentos, documen
       </div>
 
       <DashboardAlerts documentos={documentos} empresas={empresas} documentoTipos={documentoTipos} />
-
     </div>
   );
 };

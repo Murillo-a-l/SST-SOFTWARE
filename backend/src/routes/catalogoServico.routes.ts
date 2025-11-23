@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // All routes require authentication
 router.use(authenticate);
@@ -46,13 +46,13 @@ router.get('/:id', async (req, res) => {
         });
 
         if (!servico) {
-            return res.status(404).json({ message: 'Serviço não encontrado' });
+            return res.status(404).json({ status: 'error', message: 'Serviço não encontrado' });
         }
 
-        res.json({ servico });
+        res.json({ status: 'success', data: { servico } });
     } catch (error) {
         console.error('Error fetching catálogo serviço:', error);
-        res.status(500).json({ message: 'Erro ao buscar serviço' });
+        res.status(500).json({ status: 'error', message: 'Erro ao buscar serviço' });
     }
 });
 
@@ -108,10 +108,10 @@ router.post('/', async (req, res) => {
             },
         });
 
-        res.status(201).json({ servico });
+        res.status(201).json({ status: 'success', data: { servico } });
     } catch (error) {
         console.error('Error creating catálogo serviço:', error);
-        res.status(500).json({ message: 'Erro ao criar serviço' });
+        res.status(500).json({ status: 'error', message: 'Erro ao criar serviço' });
     }
 });
 
@@ -136,7 +136,7 @@ router.put('/:id', async (req, res) => {
         });
 
         if (!servicoExistente) {
-            return res.status(404).json({ message: 'Serviço não encontrado' });
+            return res.status(404).json({ status: 'error', message: 'Serviço não encontrado' });
         }
 
         // Verificar se código interno já existe (se está mudando)
@@ -147,6 +147,7 @@ router.put('/:id', async (req, res) => {
 
             if (servicoComMesmoCodigo) {
                 return res.status(400).json({
+                    status: 'error',
                     message: 'Já existe um serviço com este código interno'
                 });
             }
@@ -173,10 +174,10 @@ router.put('/:id', async (req, res) => {
             },
         });
 
-        res.json({ servico });
+        res.json({ status: 'success', data: { servico } });
     } catch (error) {
         console.error('Error updating catálogo serviço:', error);
-        res.status(500).json({ message: 'Erro ao atualizar serviço' });
+        res.status(500).json({ status: 'error', message: 'Erro ao atualizar serviço' });
     }
 });
 
@@ -198,12 +199,13 @@ router.delete('/:id', async (req, res) => {
         });
 
         if (!servico) {
-            return res.status(404).json({ message: 'Serviço não encontrado' });
+            return res.status(404).json({ status: 'error', message: 'Serviço não encontrado' });
         }
 
         // Verificar se tem serviços prestados usando este catálogo
         if (servico._count.servicosPrestados > 0) {
             return res.status(400).json({
+                status: 'error',
                 message: `Não é possível excluir serviço com ${servico._count.servicosPrestados} prestação(ões) associada(s)`
             });
         }
@@ -212,10 +214,10 @@ router.delete('/:id', async (req, res) => {
             where: { id: Number(id) },
         });
 
-        res.json({ message: 'Serviço deletado com sucesso' });
+        res.json({ status: 'success', message: 'Serviço deletado com sucesso' });
     } catch (error) {
         console.error('Error deleting catálogo serviço:', error);
-        res.status(500).json({ message: 'Erro ao deletar serviço' });
+        res.status(500).json({ status: 'error', message: 'Erro ao deletar serviço' });
     }
 });
 

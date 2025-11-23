@@ -3,7 +3,7 @@
  * Substitui dbService.ts (localStorage) por chamadas HTTP reais
  */
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api').replace(/\/+$/, '');
 const SESSION_KEY = 'occupational_health_session';
 
 // Interface para respostas da API
@@ -75,7 +75,9 @@ async function fetchApi<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = endpoint.startsWith('http')
+    ? endpoint
+    : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
   try {
     const response = await fetch(url, {
@@ -83,36 +85,29 @@ async function fetchApi<T>(
       headers,
     });
 
-    // Tenta parsear resposta JSON
-    let data: ApiResponse<T>;
+    // Tenta parsear resposta JSON e normalizar payload
+    let payload: any;
     try {
-      data = await response.json();
+      payload = await response.json();
     } catch {
-      throw new ApiError(
-        'Resposta inválida do servidor',
-        response.status
-      );
+      throw new ApiError('Resposta inválida do servidor', response.status);
     }
 
-    // Verifica se houve erro HTTP
-    if (!response.ok) {
+    const normalized: ApiResponse<T> = payload && typeof payload === 'object' && 'status' in payload
+      ? payload
+      : { status: response.ok ? 'success' : 'error', data: payload, message: (payload as any)?.message };
+
+    // Verifica se houve erro HTTP ou erro da API
+    if (!response.ok || normalized.status === 'error') {
       throw new ApiError(
-        data.message || `Erro HTTP ${response.status}`,
+        normalized.message || `Erro HTTP ${response.status}`,
         response.status,
-        data
+        payload
       );
     }
 
-    // Verifica se a API retornou erro
-    if (data.status === 'error') {
-      throw new ApiError(
-        data.message || 'Erro desconhecido',
-        response.status,
-        data
-      );
-    }
-
-    return data.data as T;
+    const finalData = (normalized as any).data !== undefined ? (normalized as any).data : payload;
+    return finalData as T;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -396,7 +391,8 @@ export const exameApi = {
    * Busca todos os exames
    */
   async getAll(): Promise<any[]> {
-    return await fetchApi<any[]>('/exames');
+    const response = await fetchApi<any[] | { exames: any[] }>('/exames');
+    return Array.isArray(response) ? response : response.exames || [];
   },
 
   /**
@@ -521,11 +517,44 @@ export const documentoApi = {
 
   /**
    * Cria novo documento assinado (duplica o original com assinatura)
+   * @deprecated Use uploadAssinado() para atualizar o mesmo documento
    */
   async assinar(id: number, data: { arquivoAssinadoBase64: string; observacoesAssinatura?: string; statusAssinatura?: string }): Promise<any> {
     const response = await fetchApi<any>(`/documentos/${id}/assinar`, {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+    return response.data || response;
+  },
+
+  /**
+   * Upload do documento assinado (NÃO duplica, atualiza o mesmo documento)
+   */
+  async uploadAssinado(id: number, data: { arquivoAssinadoBase64: string; observacoesAssinatura?: string }): Promise<any> {
+    const response = await fetchApi<any>(`/documentos/${id}/assinado`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return response.data || response;
+  },
+
+  /**
+   * Invalida a assinatura do documento (mantém histórico)
+   */
+  async invalidarAssinatura(id: number, observacoesAssinatura: string): Promise<any> {
+    const response = await fetchApi<any>(`/documentos/${id}/invalidate`, {
+      method: 'PATCH',
+      body: JSON.stringify({ observacoesAssinatura }),
+    });
+    return response.data || response;
+  },
+
+  /**
+   * Zera o documento assinado (para corrigir)
+   */
+  async resetAssinado(id: number): Promise<any> {
+    const response = await fetchApi<any>(`/documentos/${id}/reset-assinado`, {
+      method: 'PATCH',
     });
     return response.data || response;
   },

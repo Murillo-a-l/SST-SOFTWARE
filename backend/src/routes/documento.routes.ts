@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // All routes require authentication
 router.use(authenticate);
@@ -299,10 +298,10 @@ router.put('/:id', async (req, res) => {
             data: updateData,
         });
 
-        res.json(documento);
+        res.json({ status: 'success', data: { documento } });
     } catch (error) {
         console.error('Error updating documento:', error);
-        res.status(500).json({ message: 'Erro ao atualizar documento' });
+        res.status(500).json({ status: 'error', message: 'Erro ao atualizar documento' });
     }
 });
 
@@ -325,10 +324,157 @@ router.delete('/:id', async (req, res) => {
             data: { deletedAt: new Date() },
         });
 
-        res.json({ message: 'Documento deletado com sucesso' });
+        res.json({ status: 'success', message: 'Documento deletado com sucesso' });
     } catch (error) {
         console.error('Error deleting documento:', error);
-        res.status(500).json({ message: 'Erro ao deletar documento' });
+        res.status(500).json({ status: 'error', message: 'Erro ao deletar documento' });
+    }
+});
+
+// PATCH /api/documentos/:id/assinado - Upload do documento assinado (NÃO duplica, atualiza o mesmo)
+router.patch('/:id/assinado', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { arquivoAssinadoBase64, observacoesAssinatura } = req.body;
+
+        console.log('=== PATCH /assinado - Upload documento assinado ===');
+        console.log('ID do documento:', id);
+        console.log('Tem arquivo?:', !!arquivoAssinadoBase64);
+
+        // Validação
+        if (!arquivoAssinadoBase64) {
+            return res.status(400).json({ message: 'Arquivo assinado é obrigatório' });
+        }
+
+        // Buscar documento
+        const documento = await prisma.documentoEmpresa.findFirst({
+            where: { id: Number(id), deletedAt: null }
+        });
+
+        if (!documento) {
+            return res.status(404).json({ message: 'Documento não encontrado' });
+        }
+
+        // Atualizar documento com arquivo assinado
+        const documentoAtualizado = await prisma.documentoEmpresa.update({
+            where: { id: Number(id) },
+            data: {
+                arquivoAssinadoUrl: arquivoAssinadoBase64,
+                statusAssinatura: 'ASSINADO',
+                dataConclusaoAssinatura: new Date(),
+                observacoesAssinatura: observacoesAssinatura || null,
+            },
+            include: { tipo: true }
+        });
+
+        console.log('Documento atualizado com sucesso!');
+
+        res.json({
+            status: 'success',
+            message: 'Documento assinado enviado com sucesso',
+            data: documentoAtualizado
+        });
+    } catch (error) {
+        console.error('Erro ao enviar documento assinado:', error);
+        res.status(500).json({
+            message: 'Erro ao enviar documento assinado',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+
+// PATCH /api/documentos/:id/invalidate - Invalidar assinatura
+router.patch('/:id/invalidate', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { observacoesAssinatura } = req.body;
+
+        console.log('=== PATCH /invalidate - Invalidar assinatura ===');
+        console.log('ID do documento:', id);
+
+        // Validação
+        if (!observacoesAssinatura) {
+            return res.status(400).json({ message: 'Motivo da invalidação é obrigatório' });
+        }
+
+        // Buscar documento
+        const documento = await prisma.documentoEmpresa.findFirst({
+            where: { id: Number(id), deletedAt: null }
+        });
+
+        if (!documento) {
+            return res.status(404).json({ message: 'Documento não encontrado' });
+        }
+
+        // Invalidar assinatura (mantém o arquivo assinado para histórico)
+        const documentoAtualizado = await prisma.documentoEmpresa.update({
+            where: { id: Number(id) },
+            data: {
+                statusAssinatura: 'REJEITADO',
+                observacoesAssinatura,
+                dataConclusaoAssinatura: new Date(),
+            },
+            include: { tipo: true }
+        });
+
+        console.log('Assinatura invalidada com sucesso!');
+
+        res.json({
+            status: 'success',
+            message: 'Assinatura invalidada com sucesso',
+            data: documentoAtualizado
+        });
+    } catch (error) {
+        console.error('Erro ao invalidar assinatura:', error);
+        res.status(500).json({
+            message: 'Erro ao invalidar assinatura',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+
+// PATCH /api/documentos/:id/reset-assinado - Zerar documento assinado (para corrigir)
+router.patch('/:id/reset-assinado', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        console.log('=== PATCH /reset-assinado - Zerar arquivo assinado ===');
+        console.log('ID do documento:', id);
+
+        // Buscar documento
+        const documento = await prisma.documentoEmpresa.findFirst({
+            where: { id: Number(id), deletedAt: null }
+        });
+
+        if (!documento) {
+            return res.status(404).json({ message: 'Documento não encontrado' });
+        }
+
+        // Zerar arquivo assinado e voltar status para PENDENTE
+        const documentoAtualizado = await prisma.documentoEmpresa.update({
+            where: { id: Number(id) },
+            data: {
+                arquivoAssinadoUrl: null,
+                statusAssinatura: 'PENDENTE',
+                dataConclusaoAssinatura: null,
+                observacoesAssinatura: null,
+            },
+            include: { tipo: true }
+        });
+
+        console.log('Arquivo assinado removido com sucesso!');
+
+        res.json({
+            status: 'success',
+            message: 'Arquivo assinado removido com sucesso',
+            data: documentoAtualizado
+        });
+    } catch (error) {
+        console.error('Erro ao remover arquivo assinado:', error);
+        res.status(500).json({
+            message: 'Erro ao remover arquivo assinado',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 

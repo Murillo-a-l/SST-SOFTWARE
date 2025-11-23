@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
 import { IPMWebserviceClient } from '../services/nfse/ipmWebserviceClient';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Todas as rotas requerem autenticação
 router.use(authenticate);

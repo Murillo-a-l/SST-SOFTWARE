@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import { DocumentoEmpresa, Empresa, Pasta, DocumentoStatus, SignatureStatus, User } from '../types';
 import api from '../services/apiService';
@@ -53,17 +54,39 @@ const StatusBadge: React.FC<{ status: DocumentoStatus }> = ({ status }) => {
 };
 
 const SignatureStatusBadge: React.FC<{ status: SignatureStatus, assignedTo?: string }> = ({ status, assignedTo }) => {
-    const statusInfo: Record<string, { text: string; icon: string; className: string; title: string }> = {
-        'NAO_REQUER': { text: 'N/A', icon: '➖', className: 'text-gray-500', title: 'Não requer assinatura' },
-        'PENDENTE': { text: 'Pendente', icon: '✍️', className: 'text-orange-600', title: `Aguardando assinatura de ${assignedTo}` },
-        'ASSINADO': { text: 'Assinado', icon: '✔️', className: 'text-green-600', title: `Assinado por ${assignedTo}` },
-        'REJEITADO': { text: 'Rejeitado', icon: '❌', className: 'text-red-600', title: `Rejeitado por ${assignedTo}` },
+    const statusInfo: Record<string, { text: string; bgColor: string; textColor: string; title: string }> = {
+        'NAO_REQUER': {
+            text: 'Não Requer',
+            bgColor: 'bg-gray-100',
+            textColor: 'text-gray-600',
+            title: 'Não requer assinatura'
+        },
+        'PENDENTE': {
+            text: 'Pendente',
+            bgColor: 'bg-amber-100',
+            textColor: 'text-amber-700',
+            title: `Aguardando assinatura de ${assignedTo}`
+        },
+        'ASSINADO': {
+            text: 'Assinado',
+            bgColor: 'bg-green-100',
+            textColor: 'text-green-700',
+            title: `Assinado${assignedTo ? ` por ${assignedTo}` : ''}`
+        },
+        'REJEITADO': {
+            text: 'Rejeitado',
+            bgColor: 'bg-red-100',
+            textColor: 'text-red-700',
+            title: `Rejeitado${assignedTo ? ` por ${assignedTo}` : ''}`
+        },
     };
-    const info = statusInfo[status] || statusInfo['NAO_REQUER']; // Fallback para NAO_REQUER se status não for reconhecido
+    const info = statusInfo[status] || statusInfo['NAO_REQUER'];
     return (
-        <span className={`flex items-center gap-1 text-sm font-semibold ${info.className}`} title={info.title}>
-            {info.icon}
-            <span>{info.text}</span>
+        <span
+            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${info.bgColor} ${info.textColor}`}
+            title={info.title}
+        >
+            {info.text}
         </span>
     );
 };
@@ -80,11 +103,14 @@ const ActionMenu: React.FC<{
     currentUser?: User
 }> = ({ item, onEdit, onDownload, onDownloadSigned, onSetStatus, onDelete, onSign, currentUser }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef<HTMLButtonElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
+                buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
         };
@@ -92,30 +118,54 @@ const ActionMenu: React.FC<{
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        if (isOpen && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setMenuPosition({
+                top: rect.bottom + window.scrollY + 8,
+                left: rect.right + window.scrollX - 224 // 224px = w-56 (14rem * 16px)
+            });
+        }
+    }, [isOpen]);
+
     const isFolder = 'parentId' in item;
     const documento = !isFolder ? (item as DocumentoEmpresa) : null;
     const showSignButton = !isFolder && onSign && documento?.statusAssinatura === 'PENDENTE' && documento?.requerAssinaturaDeId === currentUser?.id;
+    const showManageSignature = !isFolder && onSign && documento?.statusAssinatura !== 'NAO_REQUER';
     const hasSignedVersion = !isFolder && documento?.arquivoAssinadoBase64 && documento.arquivoAssinadoBase64.length > 0;
 
+    const menuContent = (
+        <div
+            ref={menuRef}
+            className="fixed w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[9999]"
+            style={{
+                top: `${menuPosition.top}px`,
+                left: `${menuPosition.left}px`
+            }}
+        >
+            <div className="py-1" role="menu" aria-orientation="vertical">
+                <MenuItem onClick={() => { onEdit(); setIsOpen(false); }}>{isFolder ? 'Renomear' : 'Editar'}</MenuItem>
+                {!isFolder && onDownload && !hasSignedVersion && <MenuItem onClick={() => { onDownload(); setIsOpen(false); }}>📄 Baixar</MenuItem>}
+                {!isFolder && onDownload && hasSignedVersion && <MenuItem onClick={() => { onDownload(); setIsOpen(false); }}>📄 Baixar Original</MenuItem>}
+                {!isFolder && hasSignedVersion && onDownloadSigned && <MenuItem onClick={() => { onDownloadSigned(); setIsOpen(false); }}>✅ Baixar Assinado</MenuItem>}
+                {showSignButton && <MenuItem onClick={() => { onSign!(); setIsOpen(false); }} className="text-blue-600 hover:bg-blue-50 hover:text-blue-800">✍️ Assinar Documento</MenuItem>}
+                {showManageSignature && <MenuItem onClick={() => { onSign!(); setIsOpen(false); }} className="text-indigo-600 hover:bg-indigo-50 hover:text-indigo-800">📝 Gerenciar Assinatura</MenuItem>}
+                <MenuItem onClick={() => { onDelete(); setIsOpen(false); }} className="text-red-600 hover:bg-red-50 hover:text-red-800">Excluir</MenuItem>
+            </div>
+        </div>
+    );
+
     return (
-        <div className="relative" ref={menuRef}>
-            <button onClick={() => setIsOpen(!isOpen)} className="text-gray-500 hover:text-gray-800 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <>
+            <button
+                ref={buttonRef}
+                onClick={() => setIsOpen(!isOpen)}
+                className="text-gray-500 hover:text-gray-800 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
                 <DotsVerticalIcon />
             </button>
-            {isOpen && (
-                <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                    <div className="py-1" role="menu" aria-orientation="vertical">
-                        <MenuItem onClick={() => { onEdit(); setIsOpen(false); }}>{isFolder ? 'Renomear' : 'Editar'}</MenuItem>
-                        {!isFolder && onDownload && !hasSignedVersion && <MenuItem onClick={() => { onDownload(); setIsOpen(false); }}>📄 Baixar</MenuItem>}
-                        {!isFolder && onDownload && hasSignedVersion && <MenuItem onClick={() => { onDownload(); setIsOpen(false); }}>📄 Baixar Original</MenuItem>}
-                        {!isFolder && hasSignedVersion && onDownloadSigned && <MenuItem onClick={() => { onDownloadSigned(); setIsOpen(false); }}>✅ Baixar Assinado</MenuItem>}
-                        {showSignButton && <MenuItem onClick={() => { onSign!(); setIsOpen(false); }} className="text-blue-600 hover:bg-blue-50 hover:text-blue-800">✍️ Assinar Documento</MenuItem>}
-                        {!isFolder && onSetStatus && item.status !== 'ENCERRADO' && <MenuItem onClick={() => { onSetStatus('ENCERRADO'); setIsOpen(false); }}>Encerrar</MenuItem>}
-                        <MenuItem onClick={() => { onDelete(); setIsOpen(false); }} className="text-red-600 hover:bg-red-50 hover:text-red-800">Excluir</MenuItem>
-                    </div>
-                </div>
-            )}
-        </div>
+            {isOpen && createPortal(menuContent, document.body)}
+        </>
     );
 };
 
@@ -298,9 +348,8 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                 </div>
             </div>
 
-            <div className="overflow-hidden flex-grow rounded-2xl border border-[#E0E3E7] bg-white shadow-sm">
-                <div className="overflow-auto">
-                 <table className="min-w-full">
+            <div className="flex-grow rounded-2xl border border-[#E0E3E7] bg-white shadow-sm overflow-auto">
+                 <table className="min-w-full relative">
                     <thead className="bg-[#F1F3F5]">
                         <tr>
                             <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6B7480] w-2/5">Nome</th>
@@ -355,8 +404,7 @@ export const GerenciadorDocumentos: React.FC<GerenciadorDocumentosProps> = (prop
                         })}
                     </tbody>
                 </table>
-                </div>
-                 {filteredItems.length === 0 && <p className="text-center py-8 text-slate-500">Nenhum item nesta pasta.</p>}
+                {filteredItems.length === 0 && <p className="text-center py-8 text-slate-500">Nenhum item nesta pasta.</p>}
             </div>
         </div>
     );

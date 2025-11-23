@@ -9,6 +9,7 @@ const variants = {
   secondary: 'bg-bgMuted text-slate-800 border border-border hover:bg-[#E4E7EB]',
   ghost: 'text-slate-700 hover:bg-[#F1F3F5] border border-transparent',
   danger: 'bg-danger text-white hover:bg-[#c44f4f]',
+  outline: 'border border-border bg-white text-slate-800 hover:bg-[#F9FAFB] hover:text-slate-900',
 };
 
 const sizes = {

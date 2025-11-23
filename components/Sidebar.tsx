@@ -42,22 +42,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
   const navItems: { view: View; label: string; icon: React.ComponentProps<typeof AppIcon>['name'] }[] = [
     { view: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { view: 'empresas', label: 'Empresas', icon: 'building' },
-    { view: 'funcionarios', label: 'Funcionários', icon: 'users' },
+    { view: 'funcionarios', label: 'Funcionarios', icon: 'users' },
     { view: 'financeiro', label: 'Financeiro', icon: 'finance' },
     { view: 'pcmso', label: 'PCMSO', icon: 'clipboard' },
-    { view: 'relatorios', label: 'Relatórios', icon: 'reports' },
-    { view: 'configuracoes', label: 'Configurações', icon: 'settings' },
+    { view: 'relatorios', label: 'Relatorios', icon: 'reports' },
+    { view: 'configuracoes', label: 'Configuracoes', icon: 'settings' },
   ];
 
   return (
     <aside className={`fixed top-0 left-0 h-screen bg-white border-r border-[#D5D8DC] flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20 px-3' : 'w-60 px-4'}`}>
       <div className={`flex items-center h-16 border-b border-[#E0E3E7] ${isCollapsed ? 'justify-center' : 'justify-between'} py-4 mb-4`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'}`}>
-          <span className="text-2xl font-bold text-[#2F5C8C]">🩺</span>
+          <AppIcon name="dashboard" className="h-6 w-6 text-[#2F5C8C]" />
           {!isCollapsed && (
             <div className="leading-tight">
-              <p className="text-sm font-semibold text-slate-800">Saúde Ocupacional</p>
-              <p className="text-xs text-slate-500">Painel Clínico</p>
+              <p className="text-sm font-semibold text-slate-800">Saude Ocupacional</p>
+              <p className="text-xs text-slate-500">Painel Clinico</p>
             </div>
           )}
         </div>

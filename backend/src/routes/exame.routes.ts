@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../config/database';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // All routes require authentication
 router.use(authenticate);
@@ -16,10 +15,10 @@ router.get('/', async (req, res) => {
             orderBy: { dataRealizacao: 'desc' },
         });
 
-        res.json(exames);
+        res.json({ status: 'success', data: { exames } });
     } catch (error) {
         console.error('Error fetching exames:', error);
-        res.status(500).json({ message: 'Erro ao buscar exames' });
+        res.status(500).json({ status: 'error', message: 'Erro ao buscar exames' });
     }
 });
 
@@ -38,10 +37,10 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Exame não encontrado' });
         }
 
-        res.json(exame);
+        res.json({ status: 'success', data: { exame } });
     } catch (error) {
         console.error('Error fetching exame:', error);
-        res.status(500).json({ message: 'Erro ao buscar exame' });
+        res.status(500).json({ status: 'error', message: 'Erro ao buscar exame' });
     }
 });
 
@@ -59,6 +58,7 @@ router.post('/', async (req, res) => {
         // Validação básica
         if (!funcionarioId || !tipoExame || !dataRealizacao) {
             return res.status(400).json({
+                status: 'error',
                 message: 'Funcionário, tipo de exame e data de realização são obrigatórios'
             });
         }
@@ -69,7 +69,7 @@ router.post('/', async (req, res) => {
         });
 
         if (!funcionario) {
-            return res.status(404).json({ message: 'Funcionário não encontrado' });
+            return res.status(404).json({ status: 'error', message: 'Funcionário não encontrado' });
         }
 
         const exame = await prisma.exameRealizado.create({
@@ -82,10 +82,10 @@ router.post('/', async (req, res) => {
             },
         });
 
-        res.status(201).json(exame);
+        res.status(201).json({ status: 'success', data: { exame } });
     } catch (error) {
         console.error('Error creating exame:', error);
-        res.status(500).json({ message: 'Erro ao criar exame' });
+        res.status(500).json({ status: 'error', message: 'Erro ao criar exame' });
     }
 });
 
@@ -107,7 +107,7 @@ router.put('/:id', async (req, res) => {
         });
 
         if (!exameExistente) {
-            return res.status(404).json({ message: 'Exame não encontrado' });
+            return res.status(404).json({ status: 'error', message: 'Exame não encontrado' });
         }
 
         const exame = await prisma.exameRealizado.update({
@@ -121,10 +121,10 @@ router.put('/:id', async (req, res) => {
             },
         });
 
-        res.json(exame);
+        res.json({ status: 'success', data: { exame } });
     } catch (error) {
         console.error('Error updating exame:', error);
-        res.status(500).json({ message: 'Erro ao atualizar exame' });
+        res.status(500).json({ status: 'error', message: 'Erro ao atualizar exame' });
     }
 });
 
@@ -139,7 +139,7 @@ router.delete('/:id', async (req, res) => {
         });
 
         if (!exame) {
-            return res.status(404).json({ message: 'Exame não encontrado' });
+            return res.status(404).json({ status: 'error', message: 'Exame não encontrado' });
         }
 
         await prisma.exameRealizado.update({
@@ -147,10 +147,10 @@ router.delete('/:id', async (req, res) => {
             data: { deletedAt: new Date() },
         });
 
-        res.json({ message: 'Exame deletado com sucesso' });
+        res.json({ status: 'success', message: 'Exame deletado com sucesso' });
     } catch (error) {
         console.error('Error deleting exame:', error);
-        res.status(500).json({ message: 'Erro ao deletar exame' });
+        res.status(500).json({ status: 'error', message: 'Erro ao deletar exame' });
     }
 });
 

@@ -63,8 +63,14 @@ export interface DocumentoEmpresa {
   nome: string;
   tipo: string; // References DocumentoTipo.nome
   dataUpload: string;
-  arquivoBase64: string;
+
+  // ARQUIVO ORIGINAL (obrigatório - não pode ser substituído)
+  arquivoBase64: string; // Mantido para compatibilidade, representa o arquivo original
+  arquivoOriginalBase64?: string; // Novo campo explícito
+
+  // ARQUIVO ASSINADO (opcional - pode ser enviado/modificado)
   arquivoAssinadoBase64?: string;
+
   observacoes?: string;
 
   // Fields for expiration management
@@ -74,7 +80,7 @@ export interface DocumentoEmpresa {
   status: DocumentoStatus;
   dadosSensiveis: boolean;
 
-  // New fields for signature workflow
+  // Signature workflow fields (FLUXO COMPLETO)
   statusAssinatura: SignatureStatus;
   requerAssinaturaDeId: number | null; // User ID of the designated signer
   solicitadoPorId: number | null; // User ID of the requester

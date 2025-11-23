@@ -157,12 +157,20 @@ const App: React.FC = () => {
                 api.nfes.getAll(),
             ]);
 
+            const normalizedExames = (Array.isArray(exames) ? exames : exames?.exames || []).map((e: any) => ({
+                ...e,
+                funcionario_id: e.funcionario_id ?? e.funcionarioId ?? e.funcionario?.id ?? null,
+                data_realizacao: e.data_realizacao ?? e.dataRealizacao ?? null,
+                data_vencimento: e.data_vencimento ?? e.dataVencimento ?? null,
+                tipo_exame: e.tipo_exame ?? e.tipoExame ?? e.tipo ?? '',
+            }));
+
             // Mesclar dados da API com dados locais
             setData({
                 ...localData,
                 empresas: empresas,
-                funcionarios: funcionarios,
-                examesRealizados: exames,
+                funcionarios: funcionarios as any,
+                examesRealizados: normalizedExames as any,
                 documentosEmpresa: documentos,
                 pastas: pastas,
                 documentoTipos: documentoTipos,
@@ -490,14 +498,13 @@ const App: React.FC = () => {
             confirmButtonText: "Sim, Desativar",
             confirmButtonClass: "bg-orange-600 hover:bg-orange-700",
             onConfirm: () => {
-                const updatedFunc = dbService.funcionarioService.update(id, { ativo: false });
-                if (updatedFunc) {
-                    toast.success("Funcionário desativado com sucesso.");
-                    reloadData();
-                } else {
-                    toast.error("Erro ao desativar o funcionário.");
-                }
-                setConfirmation(null);
+                api.funcionarios.update(id, { ativo: false })
+                    .then(() => {
+                        toast.success("Funcionário desativado com sucesso.");
+                        reloadData();
+                    })
+                    .catch(() => toast.error("Erro ao desativar o funcionário."))
+                    .finally(() => setConfirmation(null));
             }
         });
     };
@@ -510,14 +517,13 @@ const App: React.FC = () => {
             confirmButtonText: "Excluir Permanentemente",
             confirmButtonClass: "bg-red-600 hover:bg-red-700",
             onConfirm: () => {
-                const success = dbService.funcionarioService.remove(id);
-                 if (success) {
-                    toast.success(`Funcionário "${nome}" excluído com sucesso.`);
-                    reloadData();
-                } else {
-                    toast.error("Erro ao excluir o funcionário.");
-                }
-                setConfirmation(null);
+                api.funcionarios.delete(id)
+                    .then(() => {
+                        toast.success(`Funcionário "${nome}" excluído com sucesso.`);
+                        reloadData();
+                    })
+                    .catch(() => toast.error("Erro ao excluir o funcionário."))
+                    .finally(() => setConfirmation(null));
             }
         });
     };
@@ -529,14 +535,13 @@ const App: React.FC = () => {
             confirmButtonText: "Sim, Reativar",
             confirmButtonClass: "bg-green-600 hover:bg-green-700",
             onConfirm: () => {
-                const updatedFunc = dbService.funcionarioService.update(id, { ativo: true });
-                if (updatedFunc) {
-                    toast.success("Funcionário reativado com sucesso.");
-                    reloadData();
-                } else {
-                    toast.error("Erro ao reativar o funcionário.");
-                }
-                setConfirmation(null);
+                api.funcionarios.update(id, { ativo: true })
+                    .then(() => {
+                        toast.success("Funcionário reativado com sucesso.");
+                        reloadData();
+                    })
+                    .catch(() => toast.error("Erro ao reativar o funcionário."))
+                    .finally(() => setConfirmation(null));
             }
         });
     };
@@ -702,7 +707,7 @@ const App: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 <main className="flex-1 overflow-y-auto">
-                    <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+                    <div className="w-full px-6 py-6 space-y-6">
                         {renderContent()}
                     </div>
                 </main>

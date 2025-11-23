@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import type { Funcionario } from '../types';
 import { Input } from '../src/components/ui/Input';
+import { Button } from '../src/components/ui/Button';
 import { TableShell, tableHeaderCell, tableCell } from '../src/components/ui/TableShell';
+import { SectionHeader } from '../src/components/ui/SectionHeader';
 
 interface DesativadosTabProps {
   funcionarios: Funcionario[];
@@ -15,16 +17,16 @@ export const DesativadosTab: React.FC<DesativadosTabProps> = ({ funcionarios, on
   const desativados = useMemo(() => {
     return funcionarios
       .filter(f => !f.ativo)
-      .filter(f => 
-        filterText === '' || 
+      .filter(f =>
+        filterText === '' ||
         f.nome.toLowerCase().includes(filterText) ||
         (f.matricula && f.matricula.toLowerCase().includes(filterText)) ||
         f.cargo.toLowerCase().includes(filterText)
       );
   }, [funcionarios, filterText]);
-  
+
   const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '—';
+    if (!dateStr) return '-';
     try {
       const date = new Date(dateStr);
       return new Intl.DateTimeFormat('pt-BR').format(date);
@@ -35,10 +37,11 @@ export const DesativadosTab: React.FC<DesativadosTabProps> = ({ funcionarios, on
 
   return (
     <div className="space-y-4">
+      <SectionHeader label="Recursos Humanos" title="Funcionários Desativados" />
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-        <input
+        <Input
           type="text"
-          placeholder="🔍 Filtrar por nome, matrícula, cargo..."
+          placeholder="Filtrar por nome, matrícula, cargo..."
           value={filterText}
           onChange={(e) => setFilterText(e.target.value.toLowerCase())}
           className="w-full sm:w-72"
@@ -63,9 +66,9 @@ export const DesativadosTab: React.FC<DesativadosTabProps> = ({ funcionarios, on
               <td className={`${tableCell} whitespace-nowrap`}>{func.cargo}</td>
               <td className={`${tableCell} whitespace-nowrap`}>{func.setor || 'N/A'}</td>
               <td className={`${tableCell} whitespace-nowrap`}>{formatDate(func.created_at)}</td>
-              <td className={`${tableCell} whitespace-nowrap text-right font-medium space-x-2`}>
-                <button onClick={() => onReactivate(func.id, func.nome)} className="text-[#2F6E4A] hover:underline">Reativar</button>
-                <button onClick={() => onDelete(func.id, func.nome)} className="text-[#D97777] hover:underline">Excluir</button>
+              <td className={`${tableCell} whitespace-nowrap text-right font-medium space-x-1`}>
+                <Button variant="secondary" size="sm" onClick={() => onReactivate(func.id, func.nome)}>Reativar</Button>
+                <Button variant="danger" size="sm" onClick={() => onDelete(func.id, func.nome)}>Excluir</Button>
               </td>
             </tr>
           ))}
