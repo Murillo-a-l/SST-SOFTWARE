@@ -27,12 +27,12 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ iconName, label, view, isActi
         onClick={() => onClick(view)}
         className={`group flex items-center w-full text-left px-3 py-2 rounded-xl transition-all duration-200 ${
           isActive
-            ? `bg-[${colors.background.surface}] text-[${colors.accent.primary}] border border-[${colors.accent.primary}] shadow-[${shadows.soft}]`
-            : `text-[${colors.text.secondary}] border border-transparent hover:border-[${colors.border.subtle}] hover:bg-[${colors.background.surfaceMuted}]`
+            ? 'bg-gradient-to-r from-[#0F4C5C] via-[#147D8C] to-[#0F4C5C] text-white shadow-[0_12px_30px_rgba(12,59,73,0.22)] border border-transparent'
+            : 'border border-transparent text-[#1F2A3D] hover:border-[#E3E8F2] hover:bg-white/80 hover:shadow-[0_10px_24px_rgba(12,26,45,0.08)]'
         } ${isCollapsed ? 'justify-center px-2' : ''}`}
         title={isCollapsed ? label : ''}
       >
-        <AppIcon name={iconName} className={`w-5 h-5 ${isActive ? `text-[${colors.accent.primary}]` : `text-[${colors.text.muted}]`}`} />
+        <AppIcon name={iconName} className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#6B7A92]'}`} />
         {!isCollapsed && <span className="ml-3 whitespace-nowrap text-sm font-semibold tracking-wide">{label}</span>}
       </button>
     </li>
@@ -52,21 +52,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-screen bg-gradient-to-b from-[${colors.accent.primary}] via-[${colors.accent.primary}] to-[${colors.accent.primary}]/85 text-white/90 backdrop-blur-xl flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out shadow-[${shadows.elevated}] ${
-        isCollapsed ? 'w-[72px] px-3' : 'w-60 px-4'
+      className={`fixed top-0 left-0 h-screen bg-white/80 backdrop-blur-xl border-r border-[#D4DCE6] flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out shadow-[0_24px_70px_rgba(12,26,45,0.12)] ${
+        isCollapsed ? 'w-20 px-3' : 'w-64 px-4'
       }`}
     >
       <div
-        className={`flex items-center h-20 border-b border-white/15 ${isCollapsed ? 'justify-center' : 'justify-between'} py-5 mb-5`}
+        className={`flex items-center h-20 border-b border-[#E3E8F2] ${isCollapsed ? 'justify-center' : 'justify-between'} py-5 mb-5`}
       >
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-white ring-1 ring-white/20">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0F4C5C] via-[#147D8C] to-[#C07954] text-white shadow-[0_14px_32px_rgba(12,59,73,0.35)]">
             <AppIcon name="dashboard" className="h-5 w-5" />
           </div>
           {!isCollapsed && (
             <div className="leading-tight">
-              <p className="text-sm font-semibold">Ocupalli</p>
-              <p className={`${typography.mono} text-[${colors.accent.retro}]`}>system</p>
+              <p className="text-sm font-semibold text-[#0F4C5C]">Ocupalli</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-[#6B7A92]">Edição premium</p>
             </div>
           )}
         </div>
@@ -86,16 +86,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
           ))}
         </ul>
       </nav>
-      <div className="mt-auto pt-4 border-t border-white/15">
+      <div className="mt-auto pt-4 border-t border-[#E3E8F2]">
         <button
           onClick={onToggle}
-          className={`flex items-center w-full px-3 py-2 rounded-full bg-white/10 text-white transition-all duration-200 hover:bg-white/20 ${
+          className={`flex items-center w-full px-3 py-2 rounded-full border border-[#E3E8F2] bg-white/90 text-[#1F2A3D] hover:bg-[#F7F9FC] hover:-translate-y-[1px] transition-all duration-200 ${
             isCollapsed ? 'justify-center' : 'justify-between'
           }`}
           title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
         >
           {!isCollapsed && <span className="text-sm font-semibold">{isCollapsed ? 'Expandir' : 'Recolher'} menu</span>}
-          <span className="w-5 h-5">
+          <span className="w-5 h-5 text-[#6B7A92]">
             {isCollapsed ? <AppIcon name="chevron-right" /> : <AppIcon name="chevron-left" />}
           </span>
         </button>

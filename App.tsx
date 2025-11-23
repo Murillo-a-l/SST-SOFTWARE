@@ -664,10 +664,7 @@ const App: React.FC = () => {
     }
 
     return (
-        <div
-            className="min-h-screen font-sans flex"
-            style={{ backgroundColor: colors.background.body, color: colors.text.primary }}
-        >
+        <div className="min-h-screen text-[#1F2A3D] font-sans flex bg-gradient-to-br from-[#F2F0EB]/60 via-[#F7F9FC]/80 to-[#EEF2F7]/70">
             <Toaster
                 position="top-right"
                 toastOptions={{
