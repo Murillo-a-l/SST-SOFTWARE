@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import React, { useState, useMemo } from 'react';
 import type { Funcionario, ExameRealizado } from '../types';
 import { Input } from '../src/components/ui/Input';
@@ -95,7 +95,7 @@ export const FuncionariosTab: React.FC<FuncionariosTabProps> = ({
 
   return (
     <div className="space-y-4">
-      <SectionHeader label="Recursos Humanos" title="Funcionários" />
+      <SectionHeader label="Recursos Humanos" title="Funcionarios" />
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="flex items-center space-x-2 w-full sm:w-auto">
           <Input
@@ -120,15 +120,15 @@ export const FuncionariosTab: React.FC<FuncionariosTabProps> = ({
           </Select>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <Button variant="secondary" onClick={onRegisterExame} disabled={!hasSelectedEmpresa}>Registrar Exame</Button>
-          <Button onClick={onRegister} disabled={!hasSelectedEmpresa}>Cadastrar Funcionário</Button>
+          <Button variant="secondary" onClick={onRegisterExame}>Registrar Exame</Button>
+          <Button onClick={onRegister}>Cadastrar Funcionario</Button>
         </div>
       </div>
 
       <TableShell>
         <thead className="bg-[#F1F3F5]">
           <tr>
-            <th className={tableHeaderCell}>Funcionário</th>
+            <th className={tableHeaderCell}>Funcionario</th>
             <th className={tableHeaderCell}>Cargo</th>
             <th className={tableHeaderCell}>Último Exame</th>
             <th className={tableHeaderCell}>Próximo Vencimento</th>
@@ -165,7 +165,7 @@ export const FuncionariosTab: React.FC<FuncionariosTabProps> = ({
       </TableShell>
 
       {!hasSelectedEmpresa && (
-        <p className="text-xs text-slate-500">Selecione uma empresa para visualizar os funcionários.</p>
+        <p className="text-xs text-slate-500">Selecione uma empresa para visualizar os Funcionarios.</p>
       )}
     </div>
   );

@@ -26,14 +26,30 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ iconName, label, view, isActi
       <button
         onClick={() => onClick(view)}
         className={`group flex items-center w-full text-left px-3 py-2 rounded-xl transition-all duration-200 ${
-          isActive
-            ? 'bg-gradient-to-r from-[#0F4C5C] via-[#147D8C] to-[#0F4C5C] text-white shadow-[0_12px_30px_rgba(12,59,73,0.22)] border border-transparent'
-            : 'border border-transparent text-[#1F2A3D] hover:border-[#E3E8F2] hover:bg-white/80 hover:shadow-[0_10px_24px_rgba(12,26,45,0.08)]'
-        } ${isCollapsed ? 'justify-center px-2' : ''}`}
+          isCollapsed ? 'justify-center px-2' : ''
+        }`}
+        style={{
+          background: isActive ? 'rgba(192, 121, 84, 0.18)' : 'transparent',
+          color: isActive ? colors.accent.secondary : colors.text.primary,
+          border: `1px solid ${isActive ? 'rgba(192, 121, 84, 0.35)' : colors.border.subtle}`,
+          boxShadow: isActive ? '0 8px 20px rgba(192, 121, 84, 0.12)' : 'none',
+          backdropFilter: isActive ? 'blur(10px)' : undefined,
+        }}
         title={isCollapsed ? label : ''}
       >
-        <AppIcon name={iconName} className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#6B7A92]'}`} />
-        {!isCollapsed && <span className="ml-3 whitespace-nowrap text-sm font-semibold tracking-wide">{label}</span>}
+        <AppIcon
+          name={iconName}
+          className="w-5 h-5"
+          style={{ color: isActive ? colors.accent.secondary : colors.text.secondary }}
+        />
+        {!isCollapsed && (
+          <span
+            className="ml-3 whitespace-nowrap text-sm font-semibold tracking-wide"
+            style={{ color: isActive ? colors.accent.secondary : colors.text.primary }}
+          >
+            {label}
+          </span>
+        )}
       </button>
     </li>
   );
@@ -52,21 +68,38 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-screen bg-white/80 backdrop-blur-xl border-r border-[#D4DCE6] flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out shadow-[0_24px_70px_rgba(12,26,45,0.12)] ${
-        isCollapsed ? 'w-20 px-3' : 'w-64 px-4'
+      className={`fixed top-0 left-0 h-screen flex-shrink-0 flex flex-col transition-all duration-300 ease-in-out ${
+        isCollapsed ? 'w-[72px] px-2.5' : 'w-60 px-4'
       }`}
+      style={{
+        background: 'linear-gradient(135deg, #F7F9FC 0%, #FFFFFF 50%, #EDE3D5 100%)',
+        borderRight: `1px solid ${colors.border.subtle}`,
+        boxShadow: shadows.soft,
+      }}
     >
       <div
-        className={`flex items-center h-20 border-b border-[#E3E8F2] ${isCollapsed ? 'justify-center' : 'justify-between'} py-5 mb-5`}
+        className={`flex items-center h-20 ${isCollapsed ? 'justify-center' : 'justify-between'} py-5 mb-5`}
+        style={{ borderBottom: `1px solid ${colors.border.subtle}` }}
       >
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0F4C5C] via-[#147D8C] to-[#C07954] text-white shadow-[0_14px_32px_rgba(12,59,73,0.35)]">
+          <div
+            className="flex h-11 w-11 items-center justify-center rounded-2xl text-white"
+            style={{
+              background: `linear-gradient(135deg, ${colors.accent.primary} 0%, ${colors.accent.secondary} 100%)`,
+              boxShadow: shadows.elevated,
+            }}
+          >
             <AppIcon name="dashboard" className="h-5 w-5" />
           </div>
           {!isCollapsed && (
             <div className="leading-tight">
-              <p className="text-sm font-semibold text-[#0F4C5C]">Ocupalli</p>
-              <p className="text-xs uppercase tracking-[0.18em] text-[#6B7A92]">Edição premium</p>
+              <p className="text-sm font-semibold" style={{ color: colors.accent.primary }}>OCUPALLI</p>
+              <p
+                className="text-xs uppercase tracking-[0.18em]"
+                style={{ color: colors.text.secondary, fontFamily: typography.fontMono }}
+              >
+                Sistema ocupacional
+              </p>
             </div>
           )}
         </div>
@@ -86,16 +119,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView, isC
           ))}
         </ul>
       </nav>
-      <div className="mt-auto pt-4 border-t border-[#E3E8F2]">
+      <div className="mt-auto pt-4" style={{ borderTop: `1px solid ${colors.border.subtle}` }}>
         <button
           onClick={onToggle}
-          className={`flex items-center w-full px-3 py-2 rounded-full border border-[#E3E8F2] bg-white/90 text-[#1F2A3D] hover:bg-[#F7F9FC] hover:-translate-y-[1px] transition-all duration-200 ${
+          className={`flex items-center w-full px-3 py-2 rounded-full transition-all duration-200 ${
             isCollapsed ? 'justify-center' : 'justify-between'
           }`}
           title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
+          style={{
+            backgroundColor: colors.background.surface,
+            color: colors.text.primary,
+            border: `1px solid ${colors.border.subtle}`,
+            boxShadow: shadows.soft,
+          }}
         >
           {!isCollapsed && <span className="text-sm font-semibold">{isCollapsed ? 'Expandir' : 'Recolher'} menu</span>}
-          <span className="w-5 h-5 text-[#6B7A92]">
+          <span className="w-5 h-5" style={{ color: colors.text.muted }}>
             {isCollapsed ? <AppIcon name="chevron-right" /> : <AppIcon name="chevron-left" />}
           </span>
         </button>

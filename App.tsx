@@ -46,7 +46,7 @@ import { AssinaturaDocumentoModal } from './components/modals/AssinaturaDocument
 import { ConfiguracaoNFSeModal } from './components/modals/ConfiguracaoNFSeModal';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { summarizeText, suggestExams } from "./services/geminiService";
-import { colors } from './src/styles/tokens';
+import { colors, typography } from './src/styles/tokens';
 
 
 type FuncionarioSubTab = 'ativos' | 'desativados' | 'validacao';
@@ -656,7 +656,7 @@ const App: React.FC = () => {
     }
     
     if (!authChecked) {
-        return <div className="flex items-center justify-center h-screen bg-[#F2F0EB] text-[#1F2A3D] font-sans">Carregando...</div>;
+        return <div className="flex items-center justify-center h-screen" style={{ backgroundColor: colors.background.body, color: colors.text.primary, fontFamily: typography.fontSans }}>Carregando...</div>;
     }
 
     if (!currentUser) {
@@ -664,7 +664,10 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen text-[#1F2A3D] font-sans flex bg-gradient-to-br from-[#F2F0EB]/60 via-[#F7F9FC]/80 to-[#EEF2F7]/70">
+        <div
+            className="min-h-screen flex"
+            style={{ backgroundColor: colors.background.body, color: colors.text.primary, fontFamily: typography.fontSans }}
+        >
             <Toaster
                 position="top-right"
                 toastOptions={{
@@ -697,7 +700,7 @@ const App: React.FC = () => {
                 onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             />
 
-            <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
+            <div className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'ml-[72px]' : 'ml-60'}`}>
                 <Header
                     onOpenNotifications={() => handleOpenModal('notifications')}
                     notificationCount={notifications.length}
@@ -708,7 +711,7 @@ const App: React.FC = () => {
                     onLogout={handleLogout}
                 />
                 <main className="flex-1 overflow-y-auto">
-                    <div className="w-full max-w-7xl mx-auto px-6 py-6 space-y-6">
+                    <div className="max-w-7xl mx-auto w-full px-6 py-6 space-y-6">
                         {renderContent()}
                     </div>
                 </main>

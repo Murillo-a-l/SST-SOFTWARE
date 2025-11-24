@@ -50,6 +50,9 @@ export const DocumentoManagerModal: React.FC<DocumentoManagerModalProps> = ({ is
   const [fileName, setFileName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showNewTipoForm, setShowNewTipoForm] = useState(false);
+  const [newTipoNome, setNewTipoNome] = useState('');
+  const [isSavingTipo, setIsSavingTipo] = useState(false);
 
   const isEditing = !!documentoToEdit;
 
@@ -76,6 +79,8 @@ export const DocumentoManagerModal: React.FC<DocumentoManagerModalProps> = ({ is
         setFormData(initialState);
         setFileName('');
       }
+      setShowNewTipoForm(false);
+      setNewTipoNome('');
     }
   }, [isOpen, documentoToEdit]);
 
@@ -168,7 +173,7 @@ export const DocumentoManagerModal: React.FC<DocumentoManagerModalProps> = ({ is
         dataInicio: formData.dataInicio || null,
         dataFim: dataFimFinal || null,
         observacoes: formData.observacoes || '',
-        dadosSensiveis: formData.dadosSensiveis,
+        dadosSensiveis: formData.dadosSensiveis || false,
         statusAssinatura: formData.requerAssinatura ? 'PENDENTE' : 'NAO_REQUER',
         requerAssinaturaDeId: formData.requerAssinatura ? Number(formData.requerAssinaturaDeId) : null,
         solicitadoPorId: currentUser?.id || null,
@@ -199,9 +204,33 @@ export const DocumentoManagerModal: React.FC<DocumentoManagerModalProps> = ({ is
     ? calculateDataFim(formData.dataInicio, Number(formData.validadeMeses))
     : null;
 
+  const handleCreateTipo = async () => {
+    if (!newTipoNome.trim()) {
+      toast.error('Informe um nome para o novo tipo.');
+      return;
+    }
+    setIsSavingTipo(true);
+    try {
+      const payload: any = {
+        nome: newTipoNome.trim().toUpperCase(),
+      };
+      const created = await documentoTipoApi.create(payload);
+      setTipos((prev) => [...prev, created]);
+      setFormData((prev) => ({ ...prev, tipoId: String(created.id) }));
+      toast.success('Tipo de documento criado.');
+      setShowNewTipoForm(false);
+      setNewTipoNome('');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Erro ao criar tipo.';
+      toast.error(message);
+    } finally {
+      setIsSavingTipo(false);
+    }
+  };
+
   return (
     <div className={modalOverlay}>
-      <div className={`${modalPanel} max-w-2xl max-h-[90vh] flex flex-col`}>
+      <div className={`${modalPanel} max-w-4xl max-h-[90vh] flex flex-col`}>
         <div className={modalHeader}>
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-[#7B8EA3]">Documentos</p>
@@ -210,6 +239,61 @@ export const DocumentoManagerModal: React.FC<DocumentoManagerModalProps> = ({ is
           <button onClick={onClose} className="text-slate-500 hover:text-slate-800 text-2xl">&times;</button>
         </div>
         <div className={`${modalBody} space-y-4 overflow-y-auto`}>
+          {/* Tipo */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-slate-700">Tipo*</label>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowNewTipoForm((v) => !v)}
+                className="px-3"
+              >
+                {showNewTipoForm ? 'Fechar' : 'Adicionar novo'}
+              </Button>
+            </div>
+            <SearchableSelect
+              options={tipos.map(t => ({ id: t.id, label: t.nome.toUpperCase() }))}
+              value={formData.tipoId ? Number(formData.tipoId) : null}
+              onChange={(id) => setFormData(prev => ({ ...prev, tipoId: id ? String(id) : '' }))}
+              placeholder="Buscar ou selecionar tipo de documento..."
+            />
+            {showNewTipoForm && (
+              <div className="border border-[#E0E3E7] bg-[#F9FAFB] rounded-lg p-3 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Nome do documento</label>
+                  <Input
+                    value={newTipoNome}
+                    onChange={(e) => setNewTipoNome(e.target.value)}
+                    placeholder="Ex: Laudo, ASO..."
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setShowNewTipoForm(false);
+                      setNewTipoNome('');
+                    }}
+                    className="px-3"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleCreateTipo}
+                    disabled={isSavingTipo}
+                    className="px-4"
+                  >
+                    {isSavingTipo ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Arquivo*</label>
@@ -236,21 +320,18 @@ export const DocumentoManagerModal: React.FC<DocumentoManagerModalProps> = ({ is
             <Input name="nome" value={formData.nome} onChange={handleChange} className="mt-1" placeholder="Ex: Contrato Social.pdf" />
           </div>
 
-          {/* Tipo */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Tipo*</label>
-            <Select name="tipoId" value={formData.tipoId} onChange={handleChange}>
-              <option value="">Selecione</option>
-              {tipos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-            </Select>
-          </div>
-
           {/* Validade Section */}
           <div className="border border-[#E0E3E7] p-4 rounded-lg bg-[#F9FAFB] space-y-3">
-            <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-              <input type="checkbox" name="temValidade" checked={formData.temValidade} onChange={handleChange} className="h-4 w-4 text-[#3A6EA5] rounded" />
-              Documento possui validade
-            </label>
+            <div className="flex flex-col md:flex-row md:items-center md:gap-6">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input type="checkbox" name="temValidade" checked={formData.temValidade} onChange={handleChange} className="h-4 w-4 text-[#3A6EA5] rounded" />
+                Documento possui validade
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input type="checkbox" name="dadosSensiveis" checked={formData.dadosSensiveis} onChange={handleChange} className="h-4 w-4 text-red-600 rounded" />
+                Contém dados sensíveis (LGPD)
+              </label>
+            </div>
 
             {formData.temValidade && (
               <div className="space-y-3">
@@ -300,10 +381,7 @@ export const DocumentoManagerModal: React.FC<DocumentoManagerModalProps> = ({ is
             )}
           </div>
 
-          {/* Dados Sensíveis */}
           <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-            <input type="checkbox" name="dadosSensiveis" checked={formData.dadosSensiveis} onChange={handleChange} className="h-4 w-4 text-red-600 rounded" />
-            Contém dados sensíveis (LGPD)
           </label>
 
           {/* Observações */}
@@ -328,3 +406,4 @@ export const DocumentoManagerModal: React.FC<DocumentoManagerModalProps> = ({ is
     </div>
   );
 };
+

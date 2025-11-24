@@ -15,7 +15,10 @@ interface AppIconProps {
     | 'logout'
     | 'folder'
     | 'document'
-    | 'check';
+    | 'check'
+    | 'plus'
+    | 'edit'
+    | 'trash';
   className?: string;
 }
 
@@ -90,6 +93,22 @@ const icons: Record<AppIconProps['name'], JSX.Element> = {
   check: (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+  plus: (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m7-7H5" />
+    </svg>
+  ),
+  edit: (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.651 1.651c.39.39.39 1.024 0 1.414l-8.23 8.23a2.25 2.25 0 01-1.006.571l-3.005.752.752-3.005a2.25 2.25 0 01.57-1.006l8.231-8.231c.39-.39 1.023-.39 1.414 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.5 19.5h-15" />
+    </svg>
+  ),
+  trash: (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m2 0v12a2 2 0 01-2 2H8a2 2 0 01-2-2V7h12z" />
     </svg>
   ),
 };
