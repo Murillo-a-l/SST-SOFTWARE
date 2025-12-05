@@ -1,0 +1,934 @@
+// Prisma Schema para Sistema de Saúde Ocupacional - Ocupalli
+// Superior ao Sistema ESO do mercado
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============= AUTENTICAÇÃO E USUÁRIOS =============
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  RECEPTIONIST
+  TECHNICIAN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  refreshTokens         RefreshToken[]
+  createdAppointments   Appointment[]          @relation("CreatedByUser")
+  updatedAppointments   Appointment[]          @relation("UpdatedByUser")
+  responsibleProcedures AppointmentProcedure[] @relation("ResponsibleUser")
+  issuedDocuments       Document[]             @relation("IssuerDoctor")
+  pcmsoDocuments        Document[]             @relation("PcmsDoctor")
+  signedPCMSOVersions   PCMSOVersion[]         @relation("PCMSOSignedByUser")
+  pcmsoEditHistory      PCMSOEditHistory[]     @relation("PCMSOEditHistoryUser")
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// ============= UNIDADES E SALAS =============
+
+model ClinicUnit {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String?
+  active    Boolean  @default(true)
+  address   String?
+  phone     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rooms Room[]
+
+  @@map("clinic_units")
+}
+
+enum RoomType {
+  RECEPTION
+  CONSULTATION
+  EXAM
+  VACCINE
+  WAITING
+}
+
+model Room {
+  id           String    @id @default(cuid())
+  name         String
+  description  String?
+  type         RoomType?
+  clinicUnitId String    @map("clinic_unit_id")
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  clinicUnit   ClinicUnit    @relation(fields: [clinicUnitId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([clinicUnitId])
+  @@index([type])
+  @@map("rooms")
+}
+
+// ============= EMPRESAS =============
+
+model Company {
+  id            String   @id @default(cuid())
+  corporateName String   @map("corporate_name")
+  tradeName     String?  @map("trade_name")
+  cnpj          String   @unique
+  email         String?
+  phone         String?
+  address       String?
+  active        Boolean  @default(true)
+  isDelinquent  Boolean  @default(false) @map("is_delinquent")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  workers       Worker[]
+  jobs          Job[]
+  employments   Employment[]
+  appointments  Appointment[]
+  documents     Document[]
+  environments  Environment[]
+  pcmsoVersions PCMSOVersion[]
+
+  @@index([cnpj])
+  @@index([isDelinquent])
+  @@map("companies")
+}
+
+// ============= CARGOS =============
+
+model Job {
+  id                             String    @id @default(cuid())
+  companyId                      String    @map("company_id")
+  title                          String
+  cbo                            String
+  description                    String?   @db.Text
+  name                           String?
+  gheCode                        String?   @map("ghe_code")
+  cboCode                        String?   @map("cbo_code")
+  color                          String?
+  icon                           String?
+  esocialStartDate               DateTime? @map("esocial_start_date")
+  sectorInfo                     String?   @map("sector_info")
+  activitiesDescription          String?   @map("activities_description") @db.Text
+  workJourney                    String?   @map("work_journey")
+  generalRecommendations         String?   @map("general_recommendations") @db.Text
+  gfipCode                       String?   @map("gfip_code")
+  ergonomicMethodology           String?   @map("ergonomic_methodology") @db.Text
+  generalObservations            String?   @map("general_observations") @db.Text
+  technicalOpinionLTCAT          String?   @map("technical_opinion_ltcat") @db.Text
+  technicalOpinionPericulosidade String?   @map("technical_opinion_periculosidade") @db.Text
+  technicalOpinionInsalubridade  String?   @map("technical_opinion_insalubridade") @db.Text
+  active                         Boolean   @default(true)
+  createdAt                      DateTime  @default(now()) @map("created_at")
+  updatedAt                      DateTime  @updatedAt @map("updated_at")
+
+  // Mapping relations
+  mainEnvironmentId String? @map("main_environment_id")
+
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employments     Employment[]
+  appointments    Appointment[]
+  documents       Document[]
+  mainEnvironment Environment?     @relation("MainEnvironment", fields: [mainEnvironmentId], references: [id], onDelete: SetNull)
+  jobEnvironments JobEnvironment[]
+  jobRisks        JobRisk[]
+  jobExams        JobExam[]
+  jobNotes        JobNotes?
+  examRulesByJob  ExamRuleByJob[]  @relation("JobExamRules")
+
+  @@index([companyId])
+  @@index([mainEnvironmentId])
+  @@map("jobs")
+}
+
+// ============= TRABALHADORES =============
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Worker {
+  id        String    @id @default(cuid())
+  name      String
+  cpf       String    @unique
+  birthDate DateTime? @map("birth_date")
+  gender    Gender?
+  phone     String?
+  email     String?
+  address   String?
+  companyId String    @map("company_id")
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employments  Employment[]
+  appointments Appointment[]
+  documents    Document[]
+
+  @@index([cpf])
+  @@index([active])
+  @@index([companyId])
+  @@map("workers")
+}
+
+// ============= VÍNCULOS =============
+
+enum EmploymentType {
+  WITH_EMPLOYMENT
+  TSVE_WITH_REG
+  TSVE_NO_REG
+}
+
+model Employment {
+  id                  String          @id @default(cuid())
+  workerId            String          @map("worker_id")
+  companyId           String          @map("company_id")
+  jobId               String          @map("job_id")
+  employmentType      EmploymentType? @map("employment_type")
+  esocialCategory     String?         @map("esocial_category")
+  registration        String?
+  entryExamDate       DateTime?       @map("entry_exam_date")
+  employmentStartDate DateTime        @map("employment_start_date")
+  employmentEndDate   DateTime?       @map("employment_end_date")
+  ignoreExamsBefore   DateTime?       @map("ignore_exams_before")
+  notes               String?         @db.Text
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  worker       Worker        @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  job          Job           @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  appointments Appointment[]
+  documents    Document[]
+
+  @@index([workerId])
+  @@index([companyId])
+  @@index([jobId])
+  @@index([employmentEndDate])
+  @@map("employments")
+}
+
+// ============= PROCEDIMENTOS =============
+
+enum ProcedureType {
+  CLINICAL
+  LAB
+  IMAGE
+  DOCUMENT
+  OTHER
+}
+
+model Procedure {
+  id                     String         @id @default(cuid())
+  code                   String?        @unique
+  name                   String         @unique
+  description            String?        @db.Text
+  type                   ProcedureType?
+  defaultPrice           Int?           @map("default_price")
+  durationMinutes        Int?           @map("duration_minutes")
+  defaultDurationMinutes Int?           @map("default_duration_minutes")
+  active                 Boolean        @default(true)
+  createdAt              DateTime       @default(now()) @map("created_at")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
+
+  appointmentProcedures AppointmentProcedure[]
+
+  @@index([code])
+  @@index([type])
+  @@map("procedures")
+}
+
+// ============= AGENDAMENTOS =============
+
+enum AppointmentContext {
+  ADMISSIONAL
+  PERIODICO
+  RETORNO_AO_TRABALHO
+  MUDANCA_DE_FUNCAO
+  DEMISSIONAL
+  PERIODIC
+  RETURN_TO_WORK
+  RISK_CHANGE
+  DISMISSAL
+  PONTUAL
+}
+
+enum AppointmentStatus {
+  TO_COME
+  WAITING
+  IN_SERVICE
+  DONE
+  RESCHEDULED
+  CANCELLED
+  CANCELED
+}
+
+model Appointment {
+  id              String             @id @default(cuid())
+  workerId        String             @map("worker_id")
+  companyId       String             @map("company_id")
+  employmentId    String?            @map("employment_id")
+  jobId           String?            @map("job_id")
+  roomId          String?            @map("room_id")
+  context         AppointmentContext
+  appointmentDate DateTime           @map("appointment_date")
+  scheduledAt     DateTime?          @map("scheduled_at")
+  status          AppointmentStatus  @default(TO_COME)
+  notes           String?            @db.Text
+  createdById     String?            @map("created_by_id")
+  updatedById     String?            @map("updated_by_id")
+  startedAt       DateTime?          @map("started_at")
+  finishedAt      DateTime?          @map("finished_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  worker                Worker                 @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  company               Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employment            Employment?            @relation(fields: [employmentId], references: [id], onDelete: SetNull)
+  job                   Job?                   @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  room                  Room?                  @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  createdBy             User?                  @relation("CreatedByUser", fields: [createdById], references: [id])
+  updatedBy             User?                  @relation("UpdatedByUser", fields: [updatedById], references: [id])
+  appointmentProcedures AppointmentProcedure[]
+
+  @@index([workerId])
+  @@index([companyId])
+  @@index([employmentId])
+  @@index([roomId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([appointmentDate])
+  @@index([context])
+  @@map("appointments")
+}
+
+// ============= PROCEDIMENTOS DO AGENDAMENTO =============
+
+enum ProcedureStatus {
+  PENDING
+  DOING
+  DONE
+}
+
+model AppointmentProcedure {
+  id                String           @id @default(cuid())
+  appointmentId     String           @map("appointment_id")
+  procedureId       String           @map("procedure_id")
+  responsibleUserId String?          @map("responsible_user_id")
+  status            ProcedureStatus? @default(PENDING)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  procedure       Procedure   @relation(fields: [procedureId], references: [id], onDelete: Restrict)
+  responsibleUser User?       @relation("ResponsibleUser", fields: [responsibleUserId], references: [id], onDelete: SetNull)
+
+  @@index([appointmentId])
+  @@index([procedureId])
+  @@index([responsibleUserId])
+  @@index([status])
+  @@map("appointment_procedures")
+}
+
+// ============= DOCUMENTOS =============
+
+enum DocumentType {
+  ASO
+  FICHA_CLINICA
+  AUDIOGRAMA
+  ENCAMINHAMENTO
+  OUTRO
+  CLINICAL_RECORD
+  AUDIOGRAM
+  REFERRAL
+  OTHER
+}
+
+enum DocumentStatus {
+  DRAFT
+  FINALIZED
+  FINAL
+}
+
+enum AsoConclusion {
+  APTO
+  INAPTO
+  APTO_COM_RESTRICAO
+}
+
+model Document {
+  id                           String              @id @default(cuid())
+  workerId                     String              @map("worker_id")
+  companyId                    String?             @map("company_id")
+  employmentId                 String              @map("employment_id")
+  jobId                        String?             @map("job_id")
+  type                         DocumentType
+  context                      AppointmentContext?
+  status                       DocumentStatus      @default(DRAFT)
+  publicLinkEnabled            Boolean?            @default(false) @map("public_link_enabled")
+  issueDate                    DateTime            @map("issue_date")
+  expirationDate               DateTime?           @map("expiration_date")
+  date                         DateTime?
+  asoConclusion                AsoConclusion?      @map("aso_conclusion")
+  asoSendToEsocialMode         String?             @map("aso_send_to_esocial_mode")
+  asoIsRectification           Boolean?            @map("aso_is_rectification")
+  asoOriginalReceipt           String?             @map("aso_original_receipt")
+  dismissEmployee              Boolean?            @default(false) @map("dismiss_employee")
+  dismissalDate                DateTime?           @map("dismissal_date")
+  notes                        String?             @db.Text
+  observations                 String?             @db.Text
+  esocialDiagnosticObservation String?             @map("esocial_diagnostic_observation") @db.Text
+  issuerDoctorId               String?             @map("issuer_doctor_id")
+  pcmsDoctorId                 String?             @map("pcms_doctor_id")
+  signedAt                     DateTime?           @map("signed_at")
+  createdAt                    DateTime            @default(now()) @map("created_at")
+  updatedAt                    DateTime            @updatedAt @map("updated_at")
+
+  worker       Worker     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  company      Company?   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  employment   Employment @relation(fields: [employmentId], references: [id], onDelete: Cascade)
+  job          Job?       @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  issuerDoctor User?      @relation("IssuerDoctor", fields: [issuerDoctorId], references: [id])
+  pcmsDoctor   User?      @relation("PcmsDoctor", fields: [pcmsDoctorId], references: [id])
+  files        File[]
+
+  @@index([workerId])
+  @@index([companyId])
+  @@index([employmentId])
+  @@index([type])
+  @@index([status])
+  @@index([context])
+  @@index([date])
+  @@index([issueDate])
+  @@map("documents")
+}
+
+// ============= ARQUIVOS =============
+
+enum FileOwnerType {
+  DOCUMENT
+  WORKER
+  COMPANY
+  OTHER
+}
+
+model File {
+  id           String         @id @default(cuid())
+  ownerType    FileOwnerType? @map("owner_type")
+  ownerId      String?        @map("owner_id")
+  documentId   String         @map("document_id")
+  category     String?
+  filename     String
+  originalName String         @map("original_name")
+  mimetype     String
+  mimeType     String?        @map("mime_type")
+  size         Int
+  path         String
+  uploadedAt   DateTime       @default(now()) @map("uploaded_at")
+  createdAt    DateTime?      @default(now()) @map("created_at")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([ownerType, ownerId])
+  @@index([documentId])
+  @@map("files")
+}
+
+// ============= MÓDULO DE MAPEAMENTO (PGR/PCMSO) =============
+
+// Enums para Mapeamento
+
+enum EnvironmentLocationType {
+  EMPLOYER_ESTABLISHMENT
+  THIRD_PARTY_ESTABLISHMENT
+  MOBILE
+}
+
+enum RiskType {
+  PHYSICAL
+  CHEMICAL
+  BIOLOGICAL
+  ERGONOMIC
+  ACCIDENT
+}
+
+enum RiskIntensity {
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+// Categorias de Risco
+
+model RiskCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  color       String?
+  icon        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  risks Risk[]
+
+  @@map("risk_categories")
+}
+
+// Riscos Ocupacionais
+
+model Risk {
+  id              String   @id @default(cuid())
+  categoryId      String   @map("category_id")
+  type            RiskType
+  code            String?  @unique
+  name            String   @unique
+  description     String?  @db.Text
+  sourceGenerator String?  @map("source_generator") @db.Text
+  healthEffects   String?  @map("health_effects") @db.Text
+  controlMeasures String?  @map("control_measures") @db.Text
+  allowsIntensity Boolean  @default(false) @map("allows_intensity")
+  isGlobal        Boolean  @default(true) @map("is_global")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  category         RiskCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  environmentRisks EnvironmentRisk[]
+  jobRisks         JobRisk[]
+  riskExams        RiskExam[]
+  examRulesByRisk  ExamRuleByRisk[]
+
+  @@index([categoryId])
+  @@index([type])
+  @@index([active])
+  @@map("risks")
+}
+
+// Ambientes de Trabalho (GHE)
+
+model Environment {
+  id                  String                  @id @default(cuid())
+  companyId           String                  @map("company_id")
+  name                String
+  locationType        EnvironmentLocationType @map("location_type")
+  description         String?                 @db.Text
+  color               String?
+  icon                String?
+  registeredInESocial Boolean                 @default(false) @map("registered_in_esocial")
+  previousESocialCode String?                 @map("previous_esocial_code")
+  validityStart       DateTime?               @map("validity_start")
+  validityEnd         DateTime?               @map("validity_end")
+  esocialTaxCode      String?                 @map("esocial_tax_code")
+  active              Boolean                 @default(true)
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  environmentRisks EnvironmentRisk[]
+  jobEnvironments  JobEnvironment[]
+  mainJobs         Job[]             @relation("MainEnvironment")
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@index([active])
+  @@map("environments")
+}
+
+// Pivot: Riscos do Ambiente
+
+model EnvironmentRisk {
+  id            String         @id @default(cuid())
+  environmentId String         @map("environment_id")
+  riskId        String         @map("risk_id")
+  intensity     RiskIntensity?
+  notes         String?        @db.Text
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  risk        Risk        @relation(fields: [riskId], references: [id], onDelete: Cascade)
+
+  @@unique([environmentId, riskId])
+  @@index([environmentId])
+  @@index([riskId])
+  @@map("environment_risks")
+}
+
+// Pivot: Ambientes do Cargo
+
+model JobEnvironment {
+  id            String   @id @default(cuid())
+  jobId         String   @map("job_id")
+  environmentId String   @map("environment_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  job         Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, environmentId])
+  @@index([jobId])
+  @@index([environmentId])
+  @@map("job_environments")
+}
+
+// Pivot: Riscos do Cargo
+
+model JobRisk {
+  id        String         @id @default(cuid())
+  jobId     String         @map("job_id")
+  riskId    String         @map("risk_id")
+  intensity RiskIntensity?
+  notes     String?        @db.Text
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  risk Risk @relation(fields: [riskId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, riskId])
+  @@index([jobId])
+  @@index([riskId])
+  @@map("job_risks")
+}
+
+// Exames Recomendados para Riscos
+
+model RiskExam {
+  id        String   @id @default(cuid())
+  riskId    String   @map("risk_id")
+  examName  String   @map("exam_name")
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  risk Risk @relation(fields: [riskId], references: [id], onDelete: Cascade)
+
+  @@unique([riskId, examName])
+  @@index([riskId])
+  @@map("risk_exams")
+}
+
+// Exames do Cargo
+
+model JobExam {
+  id        String   @id @default(cuid())
+  jobId     String   @map("job_id")
+  examName  String   @map("exam_name")
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, examName])
+  @@index([jobId])
+  @@map("job_exams")
+}
+
+// Notas e Textos do Cargo
+
+model JobNotes {
+  id                          String   @id @default(cuid())
+  jobId                       String   @unique @map("job_id")
+  activities                  String?  @db.Text
+  generalRecommendations      String?  @map("general_recommendations") @db.Text
+  ergonomicMethodology        String?  @map("ergonomic_methodology") @db.Text
+  generalObservations         String?  @map("general_observations") @db.Text
+  technicalOpinionLTCAT       String?  @map("technical_opinion_ltcat") @db.Text
+  technicalOpinionDanger      String?  @map("technical_opinion_danger") @db.Text
+  technicalOpinionInsalubrity String?  @map("technical_opinion_insalubrity") @db.Text
+  createdAt                   DateTime @default(now()) @map("created_at")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("job_notes")
+}
+
+// ============= MÓDULO DE EXAMES E PCMSO =============
+// Sistema completo de gestão de exames ocupacionais e PCMSO versionado
+
+// ========== ENUMS ==========
+
+enum ExamCategory {
+  CLINICAL // Exame clínico
+  LABORATORY // Exames laboratoriais
+  IMAGING // Exames de imagem
+  COMPLEMENTARY // Exames complementares
+  PSYCHOSOCIAL // Avaliação psicossocial
+  FUNCTIONAL // Testes funcionais
+  OTHER // Outros
+}
+
+enum PeriodicityType {
+  NONE // Sem periodicidade
+  ON_ADMISSION // Admissional
+  ON_DISMISSAL // Demissional
+  ON_RETURN // Retorno ao trabalho
+  ON_CHANGE // Mudança de risco
+  PERIODIC // Periódico
+  CUSTOM // Regra customizada
+}
+
+enum ExamSourceType {
+  RISK // Originado de risco
+  JOB // Originado de cargo
+  MANUAL // Adicionado manualmente
+  AI_SUGGESTION // Sugestão da IA
+  NR7_REQUIREMENT // Exigência NR-7
+}
+
+enum PCMSOStatus {
+  DRAFT // Rascunho (editável)
+  UNDER_REVIEW // Em revisão
+  SIGNED // Assinado (imutável)
+  ARCHIVED // Arquivado
+  OUTDATED // Desatualizado
+}
+
+// ========== EXAMES ==========
+
+model Examination {
+  id                    String       @id @default(cuid())
+  name                  String       @unique
+  description           String?      @db.Text
+  category              ExamCategory
+  table27Codes          String[]     @map("table_27_codes") // Códigos da tabela 27 eSocial
+  insertIntoASO         Boolean      @default(true) @map("insert_into_aso")
+  requiresJustification Boolean      @default(false) @map("requires_justification")
+  active                Boolean      @default(true)
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  riskExamRules         ExamRuleByRisk[]
+  jobExamRules          ExamRuleByJob[]
+  pcmsoExamRequirements PCMSOExamRequirement[]
+
+  @@index([active])
+  @@index([category])
+  @@map("examinations")
+}
+
+// ========== REGRAS DE EXAMES POR RISCO ==========
+
+model ExamRuleByRisk {
+  id     String @id @default(cuid())
+  riskId String @map("risk_id")
+  examId String @map("exam_id")
+
+  // Periodicidade
+  periodicityType         PeriodicityType @map("periodicity_type")
+  periodicityValue        Int?            @map("periodicity_value") // Meses
+  periodicityAdvancedRule Json?           @map("periodicity_advanced_rule") // Regras complexas
+
+  // Aplicabilidade
+  applicableOnAdmission Boolean @default(false) @map("applicable_on_admission")
+  applicableOnDismissal Boolean @default(false) @map("applicable_on_dismissal")
+  applicableOnReturn    Boolean @default(false) @map("applicable_on_return")
+  applicableOnChange    Boolean @default(false) @map("applicable_on_change")
+  applicablePeriodic    Boolean @default(false) @map("applicable_periodic")
+
+  justification    String?  @db.Text
+  aiRecommendation String?  @map("ai_recommendation") @db.Text
+  notes            String?  @db.Text
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  risk        Risk        @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  examination Examination @relation(fields: [examId], references: [id], onDelete: Restrict)
+
+  @@unique([riskId, examId])
+  @@index([riskId])
+  @@index([examId])
+  @@index([active])
+  @@map("exam_rules_by_risk")
+}
+
+// ========== REGRAS DE EXAMES POR CARGO ==========
+
+model ExamRuleByJob {
+  id     String @id @default(cuid())
+  jobId  String @map("job_id")
+  examId String @map("exam_id")
+
+  // Periodicidade
+  periodicityType         PeriodicityType @map("periodicity_type")
+  periodicityValue        Int?            @map("periodicity_value") // Meses
+  periodicityAdvancedRule Json?           @map("periodicity_advanced_rule")
+
+  // Aplicabilidade
+  applicableOnAdmission Boolean @default(false) @map("applicable_on_admission")
+  applicableOnDismissal Boolean @default(false) @map("applicable_on_dismissal")
+  applicableOnReturn    Boolean @default(false) @map("applicable_on_return")
+  applicableOnChange    Boolean @default(false) @map("applicable_on_change")
+  applicablePeriodic    Boolean @default(false) @map("applicable_periodic")
+
+  // Controles
+  overrideRiskRules Boolean @default(false) @map("override_risk_rules") // Sobrescreve regras de risco
+  insertIntoASO     Boolean @default(true) @map("insert_into_aso")
+
+  justification    String?  @db.Text
+  aiRecommendation String?  @map("ai_recommendation") @db.Text
+  notes            String?  @db.Text
+  active           Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  job         Job         @relation("JobExamRules", fields: [jobId], references: [id], onDelete: Cascade)
+  examination Examination @relation(fields: [examId], references: [id], onDelete: Restrict)
+
+  @@unique([jobId, examId])
+  @@index([jobId])
+  @@index([examId])
+  @@index([active])
+  @@map("exam_rules_by_job")
+}
+
+// ========== VERSÕES DO PCMSO ==========
+
+model PCMSOVersion {
+  id            String      @id @default(cuid())
+  companyId     String      @map("company_id")
+  versionNumber Int         @map("version_number")
+  status        PCMSOStatus
+
+  // Metadados
+  title       String?
+  contentHtml String? @map("content_html") @db.Text
+
+  // IA e Geração
+  generatedByAI Boolean @default(false) @map("generated_by_ai")
+  aiModel       String? @map("ai_model")
+
+  // Assinatura e Auditoria
+  generatedAt    DateTime  @default(now()) @map("generated_at")
+  signedAt       DateTime? @map("signed_at")
+  signedByUserId String?   @map("signed_by_user_id")
+  signatureHash  String?   @map("signature_hash") // SHA256 para integridade
+
+  // Controle de Mudanças
+  diffFromPrevious        Json?   @map("diff_from_previous") // Diff estruturado
+  changesSummary          String? @map("changes_summary") @db.Text
+  mappingChangedAfterSign Boolean @default(false) @map("mapping_changed_after_sign")
+
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  company          Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  signedByUser     User?                  @relation("PCMSOSignedByUser", fields: [signedByUserId], references: [id])
+  examRequirements PCMSOExamRequirement[]
+  editHistory      PCMSOEditHistory[]
+
+  @@unique([companyId, versionNumber])
+  @@index([companyId])
+  @@index([status])
+  @@index([versionNumber])
+  @@map("pcmso_versions")
+}
+
+// ========== EXAMES CONSOLIDADOS NO PCMSO ==========
+
+model PCMSOExamRequirement {
+  id             String @id @default(cuid())
+  pcmsoVersionId String @map("pcmso_version_id")
+  examId         String @map("exam_id")
+
+  // Origem
+  source       ExamSourceType
+  sourceRiskId String?        @map("source_risk_id")
+  sourceJobId  String?        @map("source_job_id")
+
+  // Periodicidade Consolidada
+  periodicityType         PeriodicityType @map("periodicity_type")
+  periodicityValue        Int?            @map("periodicity_value")
+  periodicityAdvancedRule Json?           @map("periodicity_advanced_rule")
+
+  // Aplicabilidade
+  applicableOnAdmission Boolean @default(false) @map("applicable_on_admission")
+  applicableOnDismissal Boolean @default(false) @map("applicable_on_dismissal")
+  applicableOnReturn    Boolean @default(false) @map("applicable_on_return")
+  applicableOnChange    Boolean @default(false) @map("applicable_on_change")
+  applicablePeriodic    Boolean @default(false) @map("applicable_periodic")
+
+  justification String?  @db.Text
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  pcmsoVersion PCMSOVersion @relation(fields: [pcmsoVersionId], references: [id], onDelete: Cascade)
+  examination  Examination  @relation(fields: [examId], references: [id], onDelete: Restrict)
+
+  @@index([pcmsoVersionId])
+  @@index([examId])
+  @@index([source])
+  @@map("pcmso_exam_requirements")
+}
+
+// ========== HISTÓRICO DE EDIÇÕES DO PCMSO (Auditoria) ==========
+
+model PCMSOEditHistory {
+  id             String @id @default(cuid())
+  pcmsoVersionId String @map("pcmso_version_id")
+  userId         String @map("user_id")
+
+  action       String // "CREATE", "EDIT_CONTENT", "ADD_EXAM", "REMOVE_EXAM", "SIGN", "ARCHIVE"
+  fieldChanged String? @map("field_changed")
+  oldValue     String? @map("old_value") @db.Text
+  newValue     String? @map("new_value") @db.Text
+
+  changeContext Json?   @map("change_context") // Contexto adicional
+  ipAddress     String? @map("ip_address")
+  userAgent     String? @map("user_agent")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  pcmsoVersion PCMSOVersion @relation(fields: [pcmsoVersionId], references: [id], onDelete: Cascade)
+  user         User         @relation("PCMSOEditHistoryUser", fields: [userId], references: [id])
+
+  @@index([pcmsoVersionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("pcmso_edit_history")
+}

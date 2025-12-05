@@ -489,3 +489,208 @@ model ConfiguracaoNFSe {
 
   @@map("configuracoes_nfse")
 }
+
+// ============= NOVO SISTEMA ESO - ESTRUTURA OFICIAL =============
+
+// 1. EMPRESA (Company) - Nova estrutura com UUID
+model Company {
+  id              String   @id @default(uuid())
+  razaoSocial     String   @map("razao_social")
+  nomeFantasia    String?  @map("nome_fantasia")
+  cnpj            String   @unique
+  cnae            String?
+  grauRisco       Int?     @map("grau_risco")
+  email           String?
+  telefone        String?
+  cep             String?
+  logradouro      String?
+  numero          String?
+  bairro          String?
+  cidade          String?
+  estado          String?
+  observacoes     String?  @db.Text
+
+  matriz          Boolean   @default(true)
+  empresaMatrizId String?   @map("empresa_matriz_id")
+  empresaMatriz   Company?  @relation("MatrizFiliais", fields: [empresaMatrizId], references: [id])
+  filiais         Company[] @relation("MatrizFiliais")
+
+  ambientes       CompanyAmbiente[]
+  cargos          CompanyCargo[]
+  vinculos        PessoaCargo[]
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([empresaMatrizId])
+  @@map("companies")
+}
+
+// 2. PESSOA (Person) - Cadastro único de pessoas
+model Person {
+  id              String    @id @default(uuid())
+  nome            String
+  cpf             String    @unique
+  dataNascimento  DateTime? @map("data_nascimento") @db.Date
+  sexo            String?
+
+  telefone        String?
+  email           String?
+
+  cep             String?
+  logradouro      String?
+  numero          String?
+  bairro          String?
+  cidade          String?
+  estado          String?
+
+  observacoes     String?   @db.Text
+
+  vinculos        PessoaCargo[]
+
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("persons")
+}
+
+// 3. CARGO (Job) - Vinculado à empresa
+model CompanyCargo {
+  id              String   @id @default(uuid())
+  nome            String
+  cbo             String?
+  descricao       String?  @db.Text
+
+  empresaId       String   @map("empresa_id")
+  empresa         Company  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  riscos          CargoRisco[]
+  exames          CargoExame[]
+  ambientes       CargoAmbiente[]
+  vinculos        PessoaCargo[]
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([empresaId])
+  @@map("company_cargos")
+}
+
+// 4. AMBIENTE (Environment) - Vinculado à empresa
+model CompanyAmbiente {
+  id              String   @id @default(uuid())
+  nome            String
+  descricao       String?  @db.Text
+
+  empresaId       String   @map("empresa_id")
+  empresa         Company  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  cargos          CargoAmbiente[]
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([empresaId])
+  @@map("company_ambientes")
+}
+
+// 5. RISCO (Risk) - Catálogo global
+model GlobalRisco {
+  id              String   @id @default(uuid())
+  nome            String
+  codigo          String?  // Tabela 24 eSocial
+  grupo           String?  // físico, químico, biológico, ergonômico, acidente
+  descricao       String?  @db.Text
+
+  cargos          CargoRisco[]
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("global_riscos")
+}
+
+// 6. EXAME / PROCEDIMENTO (Exam) - Catálogo global
+model GlobalExame {
+  id              String   @id @default(uuid())
+  nome            String
+  codigo          String?  // Código eSocial ou interno
+  tipo            String?  // admissional, periódico, retorno, mudança de risco, demissional
+  descricao       String?  @db.Text
+
+  cargos          CargoExame[]
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("global_exames")
+}
+
+// 7. TABELAS PIVÔ (Relações)
+
+model CargoRisco {
+  id       String         @id @default(uuid())
+  cargoId  String         @map("cargo_id")
+  riscoId  String         @map("risco_id")
+
+  cargo    CompanyCargo   @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  risco    GlobalRisco    @relation(fields: [riscoId], references: [id], onDelete: Cascade)
+
+  @@unique([cargoId, riscoId])
+  @@index([cargoId])
+  @@index([riscoId])
+  @@map("cargo_riscos")
+}
+
+model CargoExame {
+  id       String         @id @default(uuid())
+  cargoId  String         @map("cargo_id")
+  exameId  String         @map("exame_id")
+
+  cargo    CompanyCargo   @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  exame    GlobalExame    @relation(fields: [exameId], references: [id], onDelete: Cascade)
+
+  @@unique([cargoId, exameId])
+  @@index([cargoId])
+  @@index([exameId])
+  @@map("cargo_exames")
+}
+
+model CargoAmbiente {
+  id          String           @id @default(uuid())
+  cargoId     String           @map("cargo_id")
+  ambienteId  String           @map("ambiente_id")
+
+  cargo       CompanyCargo     @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  ambiente    CompanyAmbiente  @relation(fields: [ambienteId], references: [id], onDelete: Cascade)
+
+  @@unique([cargoId, ambienteId])
+  @@index([cargoId])
+  @@index([ambienteId])
+  @@map("cargo_ambientes")
+}
+
+// 8. VÍNCULO PESSOA–EMPRESA–CARGO
+model PessoaCargo {
+  id         String   @id @default(uuid())
+  personId   String   @map("person_id")
+  empresaId  String   @map("empresa_id")
+  cargoId    String   @map("cargo_id")
+
+  person     Person        @relation(fields: [personId], references: [id], onDelete: Cascade)
+  empresa    Company       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  cargo      CompanyCargo  @relation(fields: [cargoId], references: [id], onDelete: Restrict)
+
+  ativo      Boolean   @default(true)
+  dataEntrada DateTime? @map("data_entrada") @db.Date
+  dataSaida   DateTime? @map("data_saida") @db.Date
+
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@index([personId])
+  @@index([empresaId])
+  @@index([cargoId])
+  @@index([ativo])
+  @@map("pessoa_cargos")
+}

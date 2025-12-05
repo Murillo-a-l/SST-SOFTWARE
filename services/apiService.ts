@@ -1,17 +1,10 @@
 /**
- * API Service - Cliente HTTP para comunicação com o backend
- * Substitui dbService.ts (localStorage) por chamadas HTTP reais
+ * API Service - Cliente HTTP para comunicação com o backend NestJS
+ * Backend: NestJS rodando em http://localhost:3000/api/v1
  */
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api').replace(/\/+$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1').replace(/\/+$/, '');
 const SESSION_KEY = 'occupational_health_session';
-
-// Interface para respostas da API
-interface ApiResponse<T> {
-  status: 'success' | 'error';
-  data?: T;
-  message?: string;
-}
 
 // Interface para erros da API
 export class ApiError extends Error {
@@ -28,7 +21,7 @@ export class ApiError extends Error {
 // ==================== UTILITÁRIOS ====================
 
 /**
- * Obtém o token JWT do sessionStorage
+ * Obtém o token JWT (accessToken) do sessionStorage
  */
 function getToken(): string | null {
   const session = sessionStorage.getItem(SESSION_KEY);
@@ -36,7 +29,7 @@ function getToken(): string | null {
 
   try {
     const parsed = JSON.parse(session);
-    return parsed.token || null;
+    return parsed.accessToken || parsed.token || null;
   } catch {
     return null;
   }
@@ -45,8 +38,8 @@ function getToken(): string | null {
 /**
  * Salva o token JWT no sessionStorage
  */
-function saveToken(token: string, user: any): void {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token, user }));
+function saveToken(accessToken: string, refreshToken: string, user: any): void {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ accessToken, refreshToken, user }));
 }
 
 /**
@@ -85,29 +78,27 @@ async function fetchApi<T>(
       headers,
     });
 
-    // Tenta parsear resposta JSON e normalizar payload
+    // Tenta parsear resposta JSON
     let payload: any;
     try {
       payload = await response.json();
     } catch {
-      throw new ApiError('Resposta inválida do servidor', response.status);
+      // Se não conseguir parsear, verifica se foi bem-sucedido
+      if (!response.ok) {
+        throw new ApiError(`Erro HTTP ${response.status}`, response.status);
+      }
+      return undefined as T;
     }
 
-    const normalized: ApiResponse<T> = payload && typeof payload === 'object' && 'status' in payload
-      ? payload
-      : { status: response.ok ? 'success' : 'error', data: payload, message: (payload as any)?.message };
-
-    // Verifica se houve erro HTTP ou erro da API
-    if (!response.ok || normalized.status === 'error') {
-      throw new ApiError(
-        normalized.message || `Erro HTTP ${response.status}`,
-        response.status,
-        payload
-      );
+    // Verifica se houve erro HTTP
+    if (!response.ok) {
+      // NestJS retorna erros no formato: { success: false, error: { code, message } }
+      const errorMessage = payload?.error?.message || payload?.message || `Erro HTTP ${response.status}`;
+      throw new ApiError(errorMessage, response.status, payload);
     }
 
-    const finalData = (normalized as any).data !== undefined ? (normalized as any).data : payload;
-    return finalData as T;
+    // Retorna o payload direto (NestJS não envelopa com "data")
+    return payload as T;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -122,30 +113,41 @@ async function fetchApi<T>(
 
 // ==================== AUTENTICAÇÃO ====================
 
+/**
+ * Roles do NestJS (expandido do backend Express)
+ */
+export type UserRole = 'ADMIN' | 'DOCTOR' | 'RECEPTIONIST' | 'TECHNICIAN' | 'USER';
+
 export interface User {
-  id: number;
-  nome: string;
-  username: string;
-  role: 'ADMIN' | 'USER';
+  id: string; // NestJS usa CUID (string) em vez de number
+  name: string; // "nome" → "name"
+  email: string; // NestJS usa email em vez de username
+  role: UserRole;
+  active?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LoginResponse {
+  accessToken: string; // "token" → "accessToken"
+  refreshToken: string; // Novo campo do NestJS
   user: User;
-  token: string;
 }
 
 export const authApi = {
   /**
    * Faz login no sistema
+   * @param email Email do usuário (em vez de username)
+   * @param password Senha do usuário
    */
-  async login(username: string, password: string): Promise<LoginResponse> {
+  async login(email: string, password: string): Promise<LoginResponse> {
     const response = await fetchApi<LoginResponse>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     });
 
-    // Salva token no sessionStorage
-    saveToken(response.token, response.user);
+    // Salva tokens no sessionStorage
+    saveToken(response.accessToken, response.refreshToken, response.user);
 
     return response;
   },
@@ -171,6 +173,32 @@ export const authApi = {
   },
 
   /**
+   * Atualiza o access token usando o refresh token
+   */
+  async refresh(): Promise<LoginResponse> {
+    const session = sessionStorage.getItem(SESSION_KEY);
+    if (!session) {
+      throw new ApiError('Sessão expirada');
+    }
+
+    try {
+      const parsed = JSON.parse(session);
+      const refreshToken = parsed.refreshToken;
+
+      const response = await fetchApi<LoginResponse>('/auth/refresh', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      saveToken(response.accessToken, response.refreshToken, response.user);
+      return response;
+    } catch {
+      clearToken();
+      throw new ApiError('Sessão expirada');
+    }
+  },
+
+  /**
    * Obtém o usuário atual do sessionStorage (sem fazer requisição)
    */
   getCurrentUser(): User | null {
@@ -193,47 +221,37 @@ export const authApi = {
   },
 };
 
-// ==================== EMPRESAS ====================
+// ==================== EMPRESAS (COMPANIES) ====================
 
 export interface Empresa {
-  id: number;
-  matrizId: number | null;
-  razaoSocial: string;
-  nomeFantasia: string;
+  id: string; // CUID (string)
+  corporateName: string; // "razaoSocial" → "corporateName"
+  tradeName?: string; // "nomeFantasia" → "tradeName"
   cnpj: string;
-  endereco?: string;
-  contatoNome?: string;
-  contatoEmail?: string;
-  contatoTelefone?: string;
-  medicoNome?: string;
-  medicoCrm?: string;
-  inicioValidade?: string;
-  revisarAte?: string;
-  diaPadraoVencimento?: number;
+  email?: string;
+  phone?: string;
+  address?: string; // "endereco" → "address"
+  active: boolean; // "ativo" → "active"
+  isDelinquent: boolean; // Inadimplente
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string;
   _count?: {
-    funcionarios: number;
-    documentos: number;
+    workers: number; // "funcionarios" → "workers"
+    jobs: number; // "cargos"
+    appointments: number; // "agendamentos"
+    documents: number; // "documentos"
   };
-  filiais?: Empresa[];
 }
 
 export interface CreateEmpresaDto {
-  matrizId?: number;
-  razaoSocial: string;
-  nomeFantasia: string;
+  corporateName: string;
+  tradeName?: string;
   cnpj: string;
-  endereco?: string;
-  contatoNome?: string;
-  contatoEmail?: string;
-  contatoTelefone?: string;
-  medicoNome?: string;
-  medicoCrm?: string;
-  inicioValidade?: string;
-  revisarAte?: string;
-  diaPadraoVencimento?: number;
+  email?: string;
+  phone?: string;
+  address?: string;
+  active?: boolean;
+  isDelinquent?: boolean;
 }
 
 export const empresaApi = {
@@ -241,85 +259,101 @@ export const empresaApi = {
    * Lista todas as empresas
    */
   async getAll(): Promise<Empresa[]> {
-    const response = await fetchApi<{ empresas: Empresa[] }>('/empresas');
-    return response.empresas;  // fetchApi já retorna data.data, que contém { empresas: [] }
+    return fetchApi<Empresa[]>('/companies');
   },
 
   /**
    * Busca empresa por ID
    */
-  async getById(id: number): Promise<Empresa> {
-    return fetchApi<Empresa>(`/empresas/${id}`);
+  async getById(id: string): Promise<Empresa> {
+    return fetchApi<Empresa>(`/companies/${id}`);
   },
 
   /**
    * Cria nova empresa
    */
   async create(data: CreateEmpresaDto): Promise<Empresa> {
-    const response = await fetchApi<{ empresa: Empresa }>('/empresas', {
+    return fetchApi<Empresa>('/companies', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return response.empresa;
   },
 
   /**
    * Atualiza empresa existente
    */
-  async update(id: number, data: Partial<CreateEmpresaDto>): Promise<Empresa> {
-    const response = await fetchApi<{ empresa: Empresa }>(`/empresas/${id}`, {
-      method: 'PUT',
+  async update(id: string, data: Partial<CreateEmpresaDto>): Promise<Empresa> {
+    return fetchApi<Empresa>(`/companies/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
-    return response.empresa;
   },
 
   /**
    * Remove empresa (soft delete)
    */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/empresas/${id}`, {
+  async delete(id: string): Promise<void> {
+    await fetchApi(`/companies/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  /**
+   * Lista empresas inadimplentes
+   */
+  async getDelinquent(): Promise<Empresa[]> {
+    return fetchApi<Empresa[]>('/companies/delinquent');
+  },
+
+  /**
+   * Alterna status de inadimplência
+   */
+  async toggleDelinquency(id: string): Promise<Empresa> {
+    return fetchApi<Empresa>(`/companies/${id}/toggle-delinquency`, {
+      method: 'PATCH',
     });
   },
 };
 
-// ==================== FUNCIONÁRIOS ====================
+// ==================== FUNCIONÁRIOS (WORKERS) ====================
+
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 
 export interface Funcionario {
-  id: number;
-  empresaId: number;
-  nome: string;
-  matricula?: string;
-  cpf?: string;
-  whatsapp?: string;
-  cargo: string;
-  setor?: string;
-  dataAdmissao?: string;
-  dataUltimoExame?: string;
-  tipoUltimoExame?: string;
-  ativo: boolean;
+  id: string; // CUID
+  companyId: string; // "empresaId" → "companyId"
+  name: string; // "nome" → "name"
+  cpf: string;
+  birthDate?: string; // Novo campo
+  gender?: Gender; // Novo campo
+  phone?: string; // "whatsapp" → "phone"
+  email?: string; // Novo campo
+  address?: string; // Novo campo
+  active: boolean; // "ativo" → "active"
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string;
-  exames?: any[];
+  _count?: {
+    employments: number; // "vinculos"
+    appointments: number; // "agendamentos"
+    documents: number; // "documentos"
+  };
 }
 
 export interface CreateFuncionarioDto {
-  empresaId: number;
-  nome: string;
-  matricula?: string;
-  cpf?: string;
-  whatsapp?: string;
-  cargo: string;
-  setor?: string;
-  dataAdmissao?: string;
-  ativo?: boolean;
+  companyId: string;
+  name: string;
+  cpf: string;
+  birthDate?: string;
+  gender?: Gender;
+  phone?: string;
+  email?: string;
+  address?: string;
+  active?: boolean;
 }
 
 export interface FuncionarioFilters {
-  empresaId?: number;
-  ativo?: boolean;
+  companyId?: string;
+  active?: boolean;
 }
 
 export const funcionarioApi = {
@@ -328,85 +362,124 @@ export const funcionarioApi = {
    */
   async getAll(filters?: FuncionarioFilters): Promise<Funcionario[]> {
     const params = new URLSearchParams();
-    if (filters?.empresaId) params.append('empresaId', filters.empresaId.toString());
-    if (filters?.ativo !== undefined) params.append('ativo', filters.ativo.toString());
+    if (filters?.companyId) params.append('companyId', filters.companyId);
+    if (filters?.active !== undefined) params.append('active', filters.active.toString());
 
     const query = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetchApi<{ funcionarios: Funcionario[] }>(`/funcionarios${query}`);
-    return response.funcionarios;
+    return fetchApi<Funcionario[]>(`/workers${query}`);
   },
 
   /**
    * Busca funcionário por ID
    */
-  async getById(id: number): Promise<Funcionario> {
-    const response = await fetchApi<{ funcionario: Funcionario }>(`/funcionarios/${id}`);
-    return response.funcionario;
+  async getById(id: string): Promise<Funcionario> {
+    return fetchApi<Funcionario>(`/workers/${id}`);
+  },
+
+  /**
+   * Busca funcionário por CPF
+   */
+  async getByCpf(cpf: string): Promise<Funcionario> {
+    return fetchApi<Funcionario>(`/workers/cpf/${cpf}`);
   },
 
   /**
    * Cria novo funcionário
    */
   async create(data: CreateFuncionarioDto): Promise<Funcionario> {
-    const response = await fetchApi<{ funcionario: Funcionario }>('/funcionarios', {
+    return fetchApi<Funcionario>('/workers', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return response.funcionario;
   },
 
   /**
    * Atualiza funcionário existente
    */
-  async update(id: number, data: Partial<CreateFuncionarioDto>): Promise<Funcionario> {
-    const response = await fetchApi<{ funcionario: Funcionario }>(`/funcionarios/${id}`, {
-      method: 'PUT',
+  async update(id: string, data: Partial<CreateFuncionarioDto>): Promise<Funcionario> {
+    return fetchApi<Funcionario>(`/workers/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
-    return response.funcionario;
   },
 
   /**
    * Remove funcionário (soft delete)
    */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/funcionarios/${id}`, {
+  async delete(id: string): Promise<void> {
+    await fetchApi(`/workers/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  /**
+   * Reativa funcionário
+   */
+  async reactivate(id: string): Promise<Funcionario> {
+    return fetchApi<Funcionario>(`/workers/${id}/reactivate`, {
+      method: 'PATCH',
     });
   },
 };
 
-// ==================== EXAME API ====================
+// ==================== EXAMES (EXAMINATIONS) ====================
 
-interface CreateExameDto {
-  funcionarioId: number;
-  tipoExame: string;
-  dataRealizacao: string;
-  dataVencimento?: string;
-  observacoes?: string;
+export type ExamCategory =
+  | 'ADMISSION'
+  | 'PERIODIC'
+  | 'RETURN_TO_WORK'
+  | 'CHANGE_OF_FUNCTION'
+  | 'DISMISSAL'
+  | 'COMPLEMENTARY';
+
+export interface Examination {
+  id: string;
+  name: string;
+  description?: string;
+  category: ExamCategory;
+  table27Codes: string[];
+  insertIntoASO: boolean;
+  requiresJustification: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateExaminationDto {
+  name: string;
+  description?: string;
+  category: ExamCategory;
+  table27Codes?: string[];
+  insertIntoASO?: boolean;
+  requiresJustification?: boolean;
+  active?: boolean;
 }
 
 export const exameApi = {
   /**
-   * Busca todos os exames
+   * Lista todos os exames
    */
-  async getAll(): Promise<any[]> {
-    const response = await fetchApi<any[] | { exames: any[] }>('/exames');
-    return Array.isArray(response) ? response : response.exames || [];
+  async getAll(filters?: { category?: ExamCategory; active?: boolean }): Promise<Examination[]> {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.active !== undefined) params.append('active', filters.active.toString());
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<Examination[]>(`/examinations${query}`);
   },
 
   /**
    * Busca exame por ID
    */
-  async getById(id: number): Promise<any> {
-    return await fetchApi<any>(`/exames/${id}`);
+  async getById(id: string): Promise<Examination> {
+    return fetchApi<Examination>(`/examinations/${id}`);
   },
 
   /**
    * Cria novo exame
    */
-  async create(data: CreateExameDto): Promise<any> {
-    return await fetchApi<any>('/exames', {
+  async create(data: CreateExaminationDto): Promise<Examination> {
+    return fetchApi<Examination>('/examinations', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -415,9 +488,9 @@ export const exameApi = {
   /**
    * Atualiza exame existente
    */
-  async update(id: number, data: Partial<CreateExameDto>): Promise<any> {
-    return await fetchApi<any>(`/exames/${id}`, {
-      method: 'PUT',
+  async update(id: string, data: Partial<CreateExaminationDto>): Promise<Examination> {
+    return fetchApi<Examination>(`/examinations/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
   },
@@ -425,702 +498,449 @@ export const exameApi = {
   /**
    * Remove exame (soft delete)
    */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/exames/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// ==================== DOCUMENTO API ====================
-
-interface CreateDocumentoDto {
-  empresaId: number;
-  pastaId?: number | null;
-  tipo?: string; // Document type name (alternative to tipoId)
-  tipoId?: number; // Document type ID
-  nome: string;
-  arquivoUrl?: string; // File URL
-  arquivoBase64?: string; // Base64 encoded file (alternative to arquivoUrl)
-  arquivoAssinadoBase64?: string | null;
-  observacoes?: string;
-  temValidade?: boolean;
-  dataInicio?: string | null;
-  dataFim?: string | null;
-  status?: string;
-  dadosSensiveis?: boolean;
-  statusAssinatura?: string;
-  requerAssinaturaDeId?: number | null;
-  solicitadoPorId?: number | null;
-  dataSolicitacaoAssinatura?: string;
-  dataConclusaoAssinatura?: string | null;
-  observacoesAssinatura?: string;
-}
-
-export const documentoApi = {
-  /**
-   * Busca todos os documentos
-   */
-  async getAll(): Promise<any[]> {
-    const docs = await fetchApi<any[]>('/documentos');
-    // Map arquivoUrl to arquivoBase64 for frontend compatibility
-    return docs.map(doc => ({
-      ...doc,
-      arquivoBase64: doc.arquivoUrl,
-      arquivoAssinadoBase64: doc.arquivoAssinadoUrl || null,
-      tipo: doc.tipo?.nome || doc.tipo, // Handle both nested and flat tipo
-    }));
-  },
-
-  /**
-   * Busca documento por ID
-   */
-  async getById(id: number): Promise<any> {
-    const doc = await fetchApi<any>(`/documentos/${id}`);
-    // Map arquivoUrl to arquivoBase64 for frontend compatibility
-    return {
-      ...doc,
-      arquivoBase64: doc.arquivoUrl,
-      arquivoAssinadoBase64: doc.arquivoAssinadoUrl || null,
-      tipo: doc.tipo?.nome || doc.tipo,
-    };
-  },
-
-  /**
-   * Cria novo documento
-   */
-  async create(data: CreateDocumentoDto): Promise<any> {
-    return await fetchApi<any>('/documentos', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  /**
-   * Atualiza documento existente
-   */
-  async update(id: number, data: Partial<CreateDocumentoDto>): Promise<any> {
-    return await fetchApi<any>(`/documentos/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  /**
-   * Remove documento (soft delete)
-   */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/documentos/${id}`, {
+  async delete(id: string): Promise<void> {
+    await fetchApi(`/examinations/${id}`, {
       method: 'DELETE',
     });
   },
 
   /**
-   * Cria novo documento assinado (duplica o original com assinatura)
-   * @deprecated Use uploadAssinado() para atualizar o mesmo documento
+   * Reativa exame
    */
-  async assinar(id: number, data: { arquivoAssinadoBase64: string; observacoesAssinatura?: string; statusAssinatura?: string }): Promise<any> {
-    const response = await fetchApi<any>(`/documentos/${id}/assinar`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return response.data || response;
-  },
-
-  /**
-   * Upload do documento assinado (NÃO duplica, atualiza o mesmo documento)
-   */
-  async uploadAssinado(id: number, data: { arquivoAssinadoBase64: string; observacoesAssinatura?: string }): Promise<any> {
-    const response = await fetchApi<any>(`/documentos/${id}/assinado`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-    return response.data || response;
-  },
-
-  /**
-   * Invalida a assinatura do documento (mantém histórico)
-   */
-  async invalidarAssinatura(id: number, observacoesAssinatura: string): Promise<any> {
-    const response = await fetchApi<any>(`/documentos/${id}/invalidate`, {
-      method: 'PATCH',
-      body: JSON.stringify({ observacoesAssinatura }),
-    });
-    return response.data || response;
-  },
-
-  /**
-   * Zera o documento assinado (para corrigir)
-   */
-  async resetAssinado(id: number): Promise<any> {
-    const response = await fetchApi<any>(`/documentos/${id}/reset-assinado`, {
+  async reactivate(id: string): Promise<Examination> {
+    return fetchApi<Examination>(`/examinations/${id}/reactivate`, {
       method: 'PATCH',
     });
-    return response.data || response;
   },
 };
 
-// ==================== PASTA API ====================
+// ==================== REGRAS DE EXAMES (EXAM RULES) ====================
 
-export interface Pasta {
-  id: number;
-  empresaId: number;
-  nome: string;
-  parentId: number | null;
+export type ExamRulePeriodicity = 'ONCE' | 'MONTHLY' | 'QUARTERLY' | 'BIANNUAL' | 'ANNUAL' | 'BIENNIAL';
+
+export interface ExamRuleByRisk {
+  id: string;
+  riskId: string;
+  examinationId: string;
+  mandatory: boolean;
+  admissionPeriodicity: ExamRulePeriodicity;
+  periodicPeriodicity: ExamRulePeriodicity;
+  dismissalRequired: boolean;
+  returnToWorkRequired: boolean;
+  changeOfFunctionRequired: boolean;
+  active: boolean;
   createdAt: string;
   updatedAt: string;
-  deletedAt?: string;
+  risk?: any;
+  examination?: Examination;
+}
+
+export interface CreateExamRuleByRiskDto {
+  riskId: string;
+  examinationId: string;
+  mandatory?: boolean;
+  admissionPeriodicity?: ExamRulePeriodicity;
+  periodicPeriodicity?: ExamRulePeriodicity;
+  dismissalRequired?: boolean;
+  returnToWorkRequired?: boolean;
+  changeOfFunctionRequired?: boolean;
+  active?: boolean;
+}
+
+export interface ExamRuleByJob {
+  id: string;
+  jobId: string;
+  examinationId: string;
+  mandatory: boolean;
+  admissionPeriodicity: ExamRulePeriodicity;
+  periodicPeriodicity: ExamRulePeriodicity;
+  dismissalRequired: boolean;
+  returnToWorkRequired: boolean;
+  changeOfFunctionRequired: boolean;
+  active: boolean;
+  overrideReason?: string;
+  createdAt: string;
+  updatedAt: string;
+  job?: any;
+  examination?: Examination;
+}
+
+export interface CreateExamRuleByJobDto {
+  jobId: string;
+  examinationId: string;
+  mandatory?: boolean;
+  admissionPeriodicity?: ExamRulePeriodicity;
+  periodicPeriodicity?: ExamRulePeriodicity;
+  dismissalRequired?: boolean;
+  returnToWorkRequired?: boolean;
+  changeOfFunctionRequired?: boolean;
+  active?: boolean;
+  overrideReason?: string;
+}
+
+export const riscosExameApi = {
+  /**
+   * Lista todas as regras de exames por risco
+   */
+  async getAll(filters?: { riskId?: string; examinationId?: string }): Promise<ExamRuleByRisk[]> {
+    const params = new URLSearchParams();
+    if (filters?.riskId) params.append('riskId', filters.riskId);
+    if (filters?.examinationId) params.append('examinationId', filters.examinationId);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<ExamRuleByRisk[]>(`/exam-rules/by-risk${query}`);
+  },
+
+  /**
+   * Busca regra por ID
+   */
+  async getById(id: string): Promise<ExamRuleByRisk> {
+    return fetchApi<ExamRuleByRisk>(`/exam-rules/by-risk/${id}`);
+  },
+
+  /**
+   * Cria nova regra de exame por risco
+   */
+  async create(data: CreateExamRuleByRiskDto): Promise<ExamRuleByRisk> {
+    return fetchApi<ExamRuleByRisk>('/exam-rules/by-risk', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Atualiza regra existente
+   */
+  async update(id: string, data: Partial<CreateExamRuleByRiskDto>): Promise<ExamRuleByRisk> {
+    return fetchApi<ExamRuleByRisk>(`/exam-rules/by-risk/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Remove regra (soft delete)
+   */
+  async delete(id: string): Promise<void> {
+    await fetchApi(`/exam-rules/by-risk/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const cargosExameApi = {
+  /**
+   * Lista todas as regras de exames por cargo
+   */
+  async getAll(filters?: { jobId?: string; examinationId?: string }): Promise<ExamRuleByJob[]> {
+    const params = new URLSearchParams();
+    if (filters?.jobId) params.append('jobId', filters.jobId);
+    if (filters?.examinationId) params.append('examinationId', filters.examinationId);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<ExamRuleByJob[]>(`/exam-rules/by-job${query}`);
+  },
+
+  /**
+   * Busca regra por ID
+   */
+  async getById(id: string): Promise<ExamRuleByJob> {
+    return fetchApi<ExamRuleByJob>(`/exam-rules/by-job/${id}`);
+  },
+
+  /**
+   * Busca regras consolidadas por cargo
+   */
+  async getConsolidatedByJob(jobId: string): Promise<any> {
+    return fetchApi(`/exam-rules/by-job/consolidated/${jobId}`);
+  },
+
+  /**
+   * Cria nova regra de exame por cargo
+   */
+  async create(data: CreateExamRuleByJobDto): Promise<ExamRuleByJob> {
+    return fetchApi<ExamRuleByJob>('/exam-rules/by-job', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Atualiza regra existente
+   */
+  async update(id: string, data: Partial<CreateExamRuleByJobDto>): Promise<ExamRuleByJob> {
+    return fetchApi<ExamRuleByJob>(`/exam-rules/by-job/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Remove regra (soft delete)
+   */
+  async delete(id: string): Promise<void> {
+    await fetchApi(`/exam-rules/by-job/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ==================== PCMSO ====================
+
+export type PCMSOStatus = 'DRAFT' | 'SIGNED' | 'ARCHIVED';
+
+export interface PCMSOVersion {
+  id: string;
+  companyId: string;
+  version: number;
+  status: PCMSOStatus;
+  validFrom: string;
+  validUntil: string;
+  signedAt?: string;
+  signedBy?: string;
+  archivedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  company?: Empresa;
+  examRequirements?: PCMSOExamRequirement[];
+}
+
+export interface PCMSOExamRequirement {
+  id: string;
+  pcmsoVersionId: string;
+  examinationId: string;
+  periodicity: ExamRulePeriodicity;
+  targetJobs: string[];
+  riskBased: boolean;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  examination?: Examination;
+  pcmsoVersion?: PCMSOVersion;
+}
+
+export interface CreatePCMSOVersionDto {
+  companyId: string;
+  validFrom: string;
+  validUntil: string;
+  notes?: string;
+}
+
+export interface SignPCMSODto {
+  signedBy: string;
+}
+
+export interface CreatePCMSOExamRequirementDto {
+  pcmsoVersionId: string;
+  examinationId: string;
+  periodicity: ExamRulePeriodicity;
+  targetJobs?: string[];
+  riskBased?: boolean;
+  notes?: string;
+}
+
+export const pcmsoApi = {
+  /**
+   * Lista todas as versões PCMSO
+   */
+  async getAll(filters?: { companyId?: string; status?: PCMSOStatus }): Promise<PCMSOVersion[]> {
+    const params = new URLSearchParams();
+    if (filters?.companyId) params.append('companyId', filters.companyId);
+    if (filters?.status) params.append('status', filters.status);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return fetchApi<PCMSOVersion[]>(`/pcmso${query}`);
+  },
+
+  /**
+   * Busca versão PCMSO por ID
+   */
+  async getById(id: string): Promise<PCMSOVersion> {
+    return fetchApi<PCMSOVersion>(`/pcmso/${id}`);
+  },
+
+  /**
+   * Gera nova versão PCMSO automaticamente
+   */
+  async generate(data: CreatePCMSOVersionDto): Promise<PCMSOVersion> {
+    return fetchApi<PCMSOVersion>('/pcmso/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Cria nova versão PCMSO manualmente
+   */
+  async create(data: CreatePCMSOVersionDto): Promise<PCMSOVersion> {
+    return fetchApi<PCMSOVersion>('/pcmso', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Atualiza versão PCMSO existente (apenas DRAFT)
+   */
+  async update(id: string, data: Partial<CreatePCMSOVersionDto>): Promise<PCMSOVersion> {
+    return fetchApi<PCMSOVersion>(`/pcmso/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Remove versão PCMSO (apenas DRAFT)
+   */
+  async delete(id: string): Promise<void> {
+    await fetchApi(`/pcmso/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  /**
+   * Assina versão PCMSO (DRAFT → SIGNED)
+   */
+  async sign(id: string, data: SignPCMSODto): Promise<PCMSOVersion> {
+    return fetchApi<PCMSOVersion>(`/pcmso/${id}/sign`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Arquiva versão PCMSO (SIGNED → ARCHIVED)
+   */
+  async archive(id: string): Promise<PCMSOVersion> {
+    return fetchApi<PCMSOVersion>(`/pcmso/${id}/archive`, {
+      method: 'POST',
+    });
+  },
+
+  /**
+   * Valida conformidade NR-7 de uma versão PCMSO
+   */
+  async validateCompliance(id: string): Promise<{
+    isCompliant: boolean;
+    errors: string[];
+    warnings: string[];
+    recommendations: string[];
+  }> {
+    return fetchApi(`/pcmso/${id}/validate`);
+  },
+
+  // ==================== EXAM REQUIREMENTS ====================
+
+  /**
+   * Lista requisitos de exames de um PCMSO
+   */
+  async getExamRequirements(pcmsoVersionId: string): Promise<PCMSOExamRequirement[]> {
+    return fetchApi<PCMSOExamRequirement[]>(`/pcmso/${pcmsoVersionId}/exam-requirements`);
+  },
+
+  /**
+   * Adiciona requisito de exame ao PCMSO
+   */
+  async addExamRequirement(data: CreatePCMSOExamRequirementDto): Promise<PCMSOExamRequirement> {
+    return fetchApi<PCMSOExamRequirement>('/pcmso/exam-requirements', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Atualiza requisito de exame
+   */
+  async updateExamRequirement(
+    id: string,
+    data: Partial<CreatePCMSOExamRequirementDto>
+  ): Promise<PCMSOExamRequirement> {
+    return fetchApi<PCMSOExamRequirement>(`/pcmso/exam-requirements/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Remove requisito de exame
+   */
+  async deleteExamRequirement(id: string): Promise<void> {
+    await fetchApi(`/pcmso/exam-requirements/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const documentoApi = {
+  async getAll() { return []; },
+  async getById(id: string) { throw new ApiError('API não migrada'); },
+  async create(data: any) { throw new ApiError('API não migrada'); },
+  async update(id: string, data: any) { throw new ApiError('API não migrada'); },
+  async delete(id: string) { throw new ApiError('API não migrada'); },
+  async assinar(id: string, data: any) { throw new ApiError('API não migrada'); },
+  async uploadAssinado(id: string, data: any) { throw new ApiError('API não migrada'); },
+  async invalidarAssinatura(id: string, obs: string) { throw new ApiError('API não migrada'); },
+  async resetAssinado(id: string) { throw new ApiError('API não migrada'); },
+};
+
+export const pastaApi = {
+  async getAll(empresaId?: string) { return []; },
+  async getById(id: string) { throw new ApiError('API não migrada'); },
+  async create(data: any) { throw new ApiError('API não migrada'); },
+  async update(id: string, data: any) { throw new ApiError('API não migrada'); },
+  async delete(id: string) { throw new ApiError('API não migrada'); },
+};
+
+export const documentoTipoApi = {
+  async getAll() { return []; },
+  async getById(id: string) { throw new ApiError('API não migrada'); },
+  async create(data: any) { throw new ApiError('API não migrada'); },
+  async update(id: string, data: any) { throw new ApiError('API não migrada'); },
+  async delete(id: string) { throw new ApiError('API não migrada'); },
+};
+
+export const servicoPrestadoApi = {
+  async getAll(filters?: any) { return []; },
+  async getById(id: string) { throw new ApiError('API não migrada'); },
+  async create(data: any) { throw new ApiError('API não migrada'); },
+  async update(id: string, data: any) { throw new ApiError('API não migrada'); },
+  async delete(id: string) { throw new ApiError('API não migrada'); },
+};
+
+export const cobrancaApi = {
+  async getAll(filters?: any) { return []; },
+  async getById(id: string) { throw new ApiError('API não migrada'); },
+  async create(data: any) { throw new ApiError('API não migrada'); },
+  async update(id: string, data: any) { throw new ApiError('API não migrada'); },
+  async delete(id: string) { throw new ApiError('API não migrada'); },
+};
+
+export const nfeApi = {
+  async getAll(filters?: any) { return []; },
+  async getById(id: string) { throw new ApiError('API não migrada'); },
+  async create(data: any) { throw new ApiError('API não migrada'); },
+  async update(id: string, data: any) { throw new ApiError('API não migrada'); },
+  async delete(id: string) { throw new ApiError('API não migrada'); },
+  async emitir(data: any) { throw new ApiError('API não migrada'); },
+  async consultarPorNumero(numero: string) { throw new ApiError('API não migrada'); },
+  async consultarPorPeriodo(dataInicial: string, dataFinal: string) { throw new ApiError('API não migrada'); },
+  async cancelar(id: string, motivo: string) { throw new ApiError('API não migrada'); },
+};
+
+// Interfaces de compatibilidade
+export interface Pasta {
+  id: string;
+  empresaId: string;
+  nome: string;
+  parentId: string | null;
+  createdAt: string;
+  updatedAt: string;
   _count?: {
     subPastas: number;
     documentos: number;
   };
 }
-
-interface CreatePastaDto {
-  empresaId: number;
-  nome: string;
-  parentId?: number | null;
-}
-
-export const pastaApi = {
-  /**
-   * Lista todas as pastas (com filtros opcionais)
-   */
-  async getAll(empresaId?: number): Promise<Pasta[]> {
-    const params = new URLSearchParams();
-    if (empresaId) params.append('empresaId', empresaId.toString());
-
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetchApi<{ pastas: Pasta[] }>(`/pastas${query}`);
-    return response.pastas;
-  },
-
-  /**
-   * Busca pasta por ID
-   */
-  async getById(id: number): Promise<Pasta> {
-    const response = await fetchApi<{ pasta: Pasta }>(`/pastas/${id}`);
-    return response.pasta;
-  },
-
-  /**
-   * Cria nova pasta
-   */
-  async create(data: CreatePastaDto): Promise<Pasta> {
-    const response = await fetchApi<{ pasta: Pasta }>('/pastas', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return response.pasta;
-  },
-
-  /**
-   * Atualiza pasta existente
-   */
-  async update(id: number, data: Partial<CreatePastaDto>): Promise<Pasta> {
-    const response = await fetchApi<{ pasta: Pasta }>(`/pastas/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    return response.pasta;
-  },
-
-  /**
-   * Remove pasta (soft delete)
-   */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/pastas/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// ==================== DOCUMENTO TIPO API ====================
-
-export interface DocumentoTipo {
-  id: number;
-  nome: string;
-  validadeMesesPadrao: number | null;
-  alertaDias: number;
-  createdAt: string;
-  updatedAt: string;
-  _count?: {
-    documentos: number;
-  };
-}
-
-interface CreateDocumentoTipoDto {
-  nome: string;
-  validadeMesesPadrao?: number | null;
-  alertaDias?: number;
-}
-
-export const documentoTipoApi = {
-  /**
-   * Lista todos os tipos de documento
-   */
-  async getAll(): Promise<DocumentoTipo[]> {
-    const response = await fetchApi<{ tipos: DocumentoTipo[] }>('/documento-tipos');
-    return response.tipos;
-  },
-
-  /**
-   * Busca tipo de documento por ID
-   */
-  async getById(id: number): Promise<DocumentoTipo> {
-    const response = await fetchApi<{ tipo: DocumentoTipo }>(`/documento-tipos/${id}`);
-    return response.tipo;
-  },
-
-  /**
-   * Cria novo tipo de documento
-   */
-  async create(data: CreateDocumentoTipoDto): Promise<DocumentoTipo> {
-    const response = await fetchApi<{ tipo: DocumentoTipo }>('/documento-tipos', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return response.tipo;
-  },
-
-  /**
-   * Atualiza tipo de documento existente
-   */
-  async update(id: number, data: Partial<CreateDocumentoTipoDto>): Promise<DocumentoTipo> {
-    const response = await fetchApi<{ tipo: DocumentoTipo }>(`/documento-tipos/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    return response.tipo;
-  },
-
-  /**
-   * Remove tipo de documento
-   */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/documento-tipos/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// ==================== CATÁLOGO DE SERVIÇOS API ====================
-
-export interface CatalogoServico {
-  id: number;
-  codigoInterno: string;
-  nome: string;
-  tipo: string;
-  precoPadrao: string; // Decimal como string
-  descricao?: string;
-  aliquotaISS?: string; // Decimal como string
-  codigoServicoLC116?: string;
-  cnae?: string;
-  createdAt: string;
-  updatedAt: string;
-  _count?: {
-    servicosPrestados: number;
-  };
-}
-
-interface CreateCatalogoServicoDto {
-  codigoInterno: string;
-  nome: string;
-  tipo: string;
-  precoPadrao: number | string;
-  descricao?: string;
-  aliquotaISS?: number | string;
-  codigoServicoLC116?: string;
-  cnae?: string;
-}
-
-export const catalogoServicoApi = {
-  /**
-   * Lista todos os serviços do catálogo
-   */
-  async getAll(): Promise<CatalogoServico[]> {
-    const response = await fetchApi<{ servicos: CatalogoServico[] }>('/catalogo-servicos');
-    return response.servicos;
-  },
-
-  /**
-   * Busca serviço por ID
-   */
-  async getById(id: number): Promise<CatalogoServico> {
-    const response = await fetchApi<{ servico: CatalogoServico }>(`/catalogo-servicos/${id}`);
-    return response.servico;
-  },
-
-  /**
-   * Cria novo serviço no catálogo
-   */
-  async create(data: CreateCatalogoServicoDto): Promise<CatalogoServico> {
-    const response = await fetchApi<{ servico: CatalogoServico }>('/catalogo-servicos', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return response.servico;
-  },
-
-  /**
-   * Atualiza serviço existente
-   */
-  async update(id: number, data: Partial<CreateCatalogoServicoDto>): Promise<CatalogoServico> {
-    const response = await fetchApi<{ servico: CatalogoServico }>(`/catalogo-servicos/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    return response.servico;
-  },
-
-  /**
-   * Remove serviço do catálogo
-   */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/catalogo-servicos/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// ==================== SERVIÇO PRESTADO API ====================
-
-export interface ServicoPrestado {
-  id: number;
-  empresaId: number;
-  servicoId: number;
-  funcionarioId?: number;
-  dataRealizacao: string;
-  valorCobrado: string; // Decimal como string
-  quantidade: number;
-  descricaoAdicional?: string;
-  status: string;
-  cobrancaId?: number;
-  nfeId?: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
-  empresa?: any;
-  servico?: any;
-  funcionario?: any;
-  cobranca?: any;
-  nfe?: any;
-}
-
-interface CreateServicoPrestadoDto {
-  empresaId: number;
-  servicoId: number;
-  funcionarioId?: number;
-  dataRealizacao: string;
-  valorCobrado: number | string;
-  quantidade?: number;
-  descricaoAdicional?: string;
-  status?: string;
-  cobrancaId?: number;
-  nfeId?: number;
-}
-
-export const servicoPrestadoApi = {
-  /**
-   * Lista todos os serviços prestados (com filtros opcionais)
-   */
-  async getAll(filters?: { empresaId?: number; status?: string }): Promise<ServicoPrestado[]> {
-    const params = new URLSearchParams();
-    if (filters?.empresaId) params.append('empresaId', filters.empresaId.toString());
-    if (filters?.status) params.append('status', filters.status);
-
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetchApi<{ servicos: ServicoPrestado[] }>(`/servicos-prestados${query}`);
-    return response.servicos;
-  },
-
-  /**
-   * Busca serviço prestado por ID
-   */
-  async getById(id: number): Promise<ServicoPrestado> {
-    const response = await fetchApi<{ servico: ServicoPrestado }>(`/servicos-prestados/${id}`);
-    return response.servico;
-  },
-
-  /**
-   * Cria novo serviço prestado
-   */
-  async create(data: CreateServicoPrestadoDto): Promise<ServicoPrestado> {
-    const response = await fetchApi<{ servico: ServicoPrestado }>('/servicos-prestados', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return response.servico;
-  },
-
-  /**
-   * Atualiza serviço prestado existente
-   */
-  async update(id: number, data: Partial<CreateServicoPrestadoDto>): Promise<ServicoPrestado> {
-    const response = await fetchApi<{ servico: ServicoPrestado }>(`/servicos-prestados/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    return response.servico;
-  },
-
-  /**
-   * Remove serviço prestado (soft delete)
-   */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/servicos-prestados/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// ==================== COBRANÇA API ====================
-
-export interface Cobranca {
-  id: number;
-  empresaId: number;
-  valorTotal: string; // Decimal como string
-  dataEmissao: string;
-  dataVencimento: string;
-  dataPagamento?: string;
-  status: string;
-  desconto?: string; // Decimal como string
-  multa?: string; // Decimal como string
-  juros?: string; // Decimal como string
-  observacoes?: string;
-  nfeId?: number;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
-  empresa?: any;
-  servicosPrestados?: any[];
-  nfe?: any;
-  _count?: {
-    servicosPrestados: number;
-  };
-}
-
-interface CreateCobrancaDto {
-  empresaId: number;
-  valorTotal: number | string;
-  dataEmissao: string;
-  dataVencimento: string;
-  dataPagamento?: string;
-  status?: string;
-  desconto?: number | string;
-  multa?: number | string;
-  juros?: number | string;
-  observacoes?: string;
-  nfeId?: number;
-}
-
-export const cobrancaApi = {
-  /**
-   * Lista todas as cobranças (com filtros opcionais)
-   */
-  async getAll(filters?: { empresaId?: number; status?: string }): Promise<Cobranca[]> {
-    const params = new URLSearchParams();
-    if (filters?.empresaId) params.append('empresaId', filters.empresaId.toString());
-    if (filters?.status) params.append('status', filters.status);
-
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetchApi<{ cobrancas: Cobranca[] }>(`/cobrancas${query}`);
-    return response.cobrancas;
-  },
-
-  /**
-   * Busca cobrança por ID
-   */
-  async getById(id: number): Promise<Cobranca> {
-    const response = await fetchApi<{ cobranca: Cobranca }>(`/cobrancas/${id}`);
-    return response.cobranca;
-  },
-
-  /**
-   * Cria nova cobrança
-   */
-  async create(data: CreateCobrancaDto): Promise<Cobranca> {
-    const response = await fetchApi<{ cobranca: Cobranca }>('/cobrancas', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return response.cobranca;
-  },
-
-  /**
-   * Atualiza cobrança existente
-   */
-  async update(id: number, data: Partial<CreateCobrancaDto>): Promise<Cobranca> {
-    const response = await fetchApi<{ cobranca: Cobranca }>(`/cobrancas/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    return response.cobranca;
-  },
-
-  /**
-   * Remove cobrança (soft delete)
-   */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/cobrancas/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// ==================== NFE API ====================
-
-export interface NFe {
-  id: number;
-  empresaId: number;
-  numero?: string;
-  dataEmissao: string;
-  valor: string; // Decimal como string
-  descricaoServicos: string;
-  status: string;
-  xml?: string;
-  pdf?: string;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
-  empresa?: any;
-  servicosPrestados?: any[];
-  cobrancas?: any[];
-  _count?: {
-    servicosPrestados: number;
-    cobrancas: number;
-  };
-}
-
-interface CreateNFeDto {
-  empresaId: number;
-  numero?: string;
-  dataEmissao: string;
-  valor: number | string;
-  descricaoServicos: string;
-  status?: string;
-  xml?: string;
-  pdf?: string;
-}
-
-// Interface para resposta de emissão de NFSe
-export interface NFSeEmissaoResponse {
-  message: string;
-  nfe: NFe;
-  response: {
-    numero?: string;
-    serie?: string;
-    data?: string;
-    hora?: string;
-    link?: string;
-    codigoVerificador?: string;
-  };
-}
-
-// Interface para dados de emissão de NFSe
-interface EmitirNFSeDto {
-  empresaId: number;
-  servicosPrestadosIds: number[];
-  observacao?: string;
-}
-
-export const nfeApi = {
-  /**
-   * Lista todas as NFes (com filtros opcionais)
-   */
-  async getAll(filters?: { empresaId?: number; status?: string }): Promise<NFe[]> {
-    const params = new URLSearchParams();
-    if (filters?.empresaId) params.append('empresaId', filters.empresaId.toString());
-    if (filters?.status) params.append('status', filters.status);
-
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const response = await fetchApi<{ nfes: NFe[] }>(`/nfes${query}`);
-    return response.nfes;
-  },
-
-  /**
-   * Busca NFe por ID
-   */
-  async getById(id: number): Promise<NFe> {
-    const response = await fetchApi<{ nfe: NFe }>(`/nfes/${id}`);
-    return response.nfe;
-  },
-
-  /**
-   * Cria nova NFe
-   */
-  async create(data: CreateNFeDto): Promise<NFe> {
-    const response = await fetchApi<{ nfe: NFe }>('/nfes', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return response.nfe;
-  },
-
-  /**
-   * Atualiza NFe existente
-   */
-  async update(id: number, data: Partial<CreateNFeDto>): Promise<NFe> {
-    const response = await fetchApi<{ nfe: NFe }>(`/nfes/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-    return response.nfe;
-  },
-
-  /**
-   * Remove NFe (soft delete)
-   */
-  async delete(id: number): Promise<void> {
-    await fetchApi(`/nfes/${id}`, {
-      method: 'DELETE',
-    });
-  },
-
-  // ========================================
-  // INTEGRAÇÃO COM WEBSERVICE IPM
-  // ========================================
-
-  /**
-   * Emite NFSe via webservice IPM (AtendeNet)
-   */
-  async emitir(data: EmitirNFSeDto): Promise<NFSeEmissaoResponse> {
-    return await fetchApi<NFSeEmissaoResponse>('/nfes/emitir', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  /**
-   * Consulta NFSe por número no webservice IPM
-   */
-  async consultarPorNumero(numero: string): Promise<any> {
-    const response = await fetchApi<{ nfse: any }>(`/nfes/${numero}/consultar`);
-    return response.nfse;
-  },
-
-  /**
-   * Consulta NFSe por período no webservice IPM
-   */
-  async consultarPorPeriodo(dataInicial: string, dataFinal: string): Promise<any[]> {
-    const params = new URLSearchParams();
-    params.append('dataInicial', dataInicial);
-    params.append('dataFinal', dataFinal);
-
-    const response = await fetchApi<{ nfses: any[] }>(`/nfes/consultar-periodo?${params.toString()}`);
-    return response.nfses;
-  },
-
-  /**
-   * Cancela NFSe no webservice IPM
-   */
-  async cancelar(id: number, motivoCancelamento: string): Promise<{ message: string; response: any }> {
-    return await fetchApi<{ message: string; response: any }>(`/nfes/${id}/cancelar`, {
-      method: 'POST',
-      body: JSON.stringify({ motivoCancelamento }),
-    });
-  },
-};
 
 // ==================== EXPORTAÇÕES ====================
 
@@ -1129,10 +949,12 @@ export const api = {
   empresas: empresaApi,
   funcionarios: funcionarioApi,
   exames: exameApi,
+  riscosExame: riscosExameApi,
+  cargosExame: cargosExameApi,
+  pcmso: pcmsoApi,
   documentos: documentoApi,
   pastas: pastaApi,
   documentoTipos: documentoTipoApi,
-  catalogoServicos: catalogoServicoApi,
   servicosPrestados: servicoPrestadoApi,
   cobrancas: cobrancaApi,
   nfes: nfeApi,

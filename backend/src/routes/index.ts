@@ -12,6 +12,15 @@ import cobrancaRoutes from './cobranca.routes';
 import nfeRoutes from './nfe.routes';
 import configuracaoNFSeRoutes from './configuracaoNFSe.routes';
 
+// NOVO SISTEMA ESO - Estrutura Oficial
+import companyRoutes from './company.routes';
+import personRoutes from './person.routes';
+import cargoRoutes from './cargo.routes';
+import ambienteRoutes from './ambiente.routes';
+import riscoRoutes from './risco.routes';
+import globalExameRoutes from './globalExame.routes';
+import vinculoRoutes from './vinculo.routes';
+
 const router = Router();
 
 router.use('/auth', authRoutes);
@@ -26,6 +35,15 @@ router.use('/servicos-prestados', servicoPrestadoRoutes);
 router.use('/cobrancas', cobrancaRoutes);
 router.use('/nfes', nfeRoutes);
 router.use('/configuracao-nfse', configuracaoNFSeRoutes);
+
+// NOVO SISTEMA ESO - Estrutura Oficial
+router.use('/company', companyRoutes);
+router.use('/person', personRoutes);
+router.use('/cargo', cargoRoutes);
+router.use('/ambiente', ambienteRoutes);
+router.use('/risco', riscoRoutes);
+router.use('/global-exame', globalExameRoutes);
+router.use('/vinculo', vinculoRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

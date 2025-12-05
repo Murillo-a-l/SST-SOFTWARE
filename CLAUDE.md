@@ -2,18 +2,44 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ IMPORTANTE: MIGRAÇÃO PARA NESTJS CONCLUÍDA + MÓDULO MAPPING (01/12/2025)
+
+**O sistema migrou do backend Express para NestJS e agora inclui módulo completo de Mapeamento de Riscos!**
+
+### Backends no Projeto
+
+Este projeto contém **dois backends**:
+
+1. **🟢 NestJS (ATUAL - EM USO)** - `nestjs-backend/`
+   - Porta: **3000**
+   - API Base: `http://localhost:3000/api/v1`
+   - Status: ✅ **ATIVO E INTEGRADO COM FRONTEND**
+   - Database: `ocupalli_test`
+
+2. **🔴 Express (LEGADO - DESCONTINUADO)** - `backend/`
+   - Porta: 3001
+   - API Base: `http://localhost:3001/api`
+   - Status: ⚠️ **DESCONTINUADO - NÃO USAR**
+   - Database: `occupational_health`
+
+**📚 Documentação da Migração**: Ver arquivo `MIGRACAO-NESTJS.md` para detalhes completos.
+
+---
+
 ## Project Overview
 
-This is an **Occupational Health Management System** built as a full-stack application for managing employee occupational health data, medical exams, documents, and billing in Brazil. The application is designed for companies to track employee health compliance (ASOs, PCMSO), manage contracts, and handle financial operations related to occupational health services.
+This is an **Occupational Health Management System** (Ocupalli) built as a full-stack application for managing employee occupational health data, medical exams, documents, and billing in Brazil. The application is designed for companies to track employee health compliance (ASOs, PCMSO), manage contracts, and handle financial operations related to occupational health services.
 
 **Key Characteristics:**
 - **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS (port 3002)
-- **Backend**: Node.js + Express + TypeScript + Prisma ORM (port 3001)
-- **Database**: PostgreSQL 18
-- **Hybrid architecture**: Currently migrating from localStorage to PostgreSQL (90% complete)
-- Multi-company architecture with matriz/filial (parent/subsidiary) relationships
+- **Backend**: NestJS + TypeScript + Prisma ORM (port 3000) ✅ **ATUAL**
+- **Database**: PostgreSQL (`ocupalli_test`)
+- **Architecture**: Modern NestJS with clean architecture, DTOs, and dependency injection
+- Multi-company architecture with full company management
 - Integrates with Google Gemini AI for occupational health assistance
-- NFS-e (Brazilian tax invoice) integration via IPM/AtendeNet webservice
+- Swagger API documentation at `http://localhost:3000/api/docs`
+
+---
 
 ## Build and Development Commands
 
@@ -23,7 +49,7 @@ This is an **Occupational Health Management System** built as a full-stack appli
 # Install dependencies
 npm install
 
-# Run development server (runs on http://localhost:3002)
+# Run development server (runs on http://localhost:3002 or 3003)
 npm run dev
 
 # Build for production
@@ -34,324 +60,306 @@ npm run preview
 ```
 
 **Dev Server Configuration:**
-- Port: 3002 (changed from 3000)
+- Port: 3002 (primary) or auto-increment if busy
 - Host: 0.0.0.0 (accessible from network)
 - Hot Module Replacement (HMR) enabled via Vite
 
-### Backend
+### Backend NestJS (ATUAL)
 
 ```bash
-# Navigate to backend directory
-cd backend
+# Navigate to NestJS backend directory
+cd nestjs-backend
 
 # Install dependencies
 npm install
 
-# Setup database (first time only) - OPTION 1: Automated setup
-npm run setup  # Interactive script that creates DB, runs migrations, and seeds data
-
-# OPTION 2: Manual setup
-# 1. Create PostgreSQL database: CREATE DATABASE occupational_health;
+# Setup database (first time only)
+# 1. Create PostgreSQL database: CREATE DATABASE ocupalli_test;
 # 2. Copy .env.example to .env and configure DATABASE_URL
-# 3. IMPORTANT: Merge schema-extra.prisma into schema.prisma (see note below)
-# 4. Run migrations and seed
+# 3. Run migrations and seed
 npm run prisma:generate
-npm run prisma:migrate
+npx prisma db push
 npm run prisma:seed
 
-# Run development server with hot reload (runs on http://localhost:3001)
+# Run development server with hot reload (runs on http://localhost:3000)
 npm run dev
 
 # Build for production
 npm run build
 
 # Start production server
-npm start
+npm run start:prod
 
 # Open Prisma Studio (database GUI on http://localhost:5555)
 npm run prisma:studio
 ```
 
-**Important Prisma Note:**
-The Prisma schema is split into two files: `backend/prisma/schema.prisma` (partial) and `backend/prisma/schema-extra.prisma` (rest). Before running migrations, you must copy the contents of `schema-extra.prisma` and append it to the end of `schema.prisma`.
+**Backend Features:**
+- 17 módulos funcionais (Auth, Users, Companies, Workers, Jobs, Employments, **Mapping**, etc.)
+- ~91 endpoints REST (60 originais + 31 mapping)
+- JWT authentication with refresh tokens
+- **🆕 Módulo Mapping**: Mapeamento completo de riscos ocupacionais (31 endpoints)
+- Role-based access control (ADMIN, DOCTOR, RECEPTIONIST, TECHNICIAN)
+- Swagger documentation auto-generated
+- Validation com class-validator
+- Exception handling padronizado
+
+---
 
 ## Environment Configuration
 
 ### Frontend (.env.local in project root)
 
 ```env
+# Gemini AI (opcional)
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
+
+# Backend NestJS URL (OBRIGATÓRIO)
+VITE_API_BASE_URL=http://localhost:3000/api/v1
 ```
 
 **Important:**
-- Get your API key from https://ai.google.dev/
-- The application will display an error alert if the Gemini API key is missing when AI features are used
+- `VITE_API_BASE_URL` aponta para o backend **NestJS** na porta 3000
+- Get Gemini API key from https://ai.google.dev/
 - The key is exposed in the browser via `import.meta.env`
 
-### Backend (backend/.env)
+### Backend NestJS (nestjs-backend/.env)
 
 ```env
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/occupational_health?schema=public"
+DATABASE_URL="postgresql://postgres:Liloestit013@localhost:5432/ocupalli_test?schema=public"
 
-# JWT
-JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
-JWT_EXPIRES_IN="7d"
+# JWT Authentication
+JWT_SECRET="ocupalli-super-secret-jwt-key-change-in-production-2024"
+JWT_EXPIRES_IN="15m"
+JWT_REFRESH_SECRET="ocupalli-super-secret-refresh-key-change-in-production-2024"
+JWT_REFRESH_EXPIRES_IN="7d"
 
 # Server
-PORT=3001
+PORT=3000
 NODE_ENV="development"
 
-# Frontend URL (for CORS)
-FRONTEND_URL="http://localhost:3002"
+# File Upload
+UPLOAD_PATH="./uploads"
+MAX_FILE_SIZE=52428800
 
-# Gemini API (optional - for AI features)
-GEMINI_API_KEY="your-gemini-api-key"
-
-# NFS-e (optional - for Brazilian tax invoices)
-NFSE_IPM_LOGIN="your-cnpj"
-NFSE_IPM_SENHA="your-password"
-NFSE_IPM_CIDADE="8055"
-NFSE_IPM_MODO_TESTE="true"
+# CORS
+CORS_ORIGIN="http://localhost:3002"
 ```
 
-See `backend/.env.example` for a template.
+See `nestjs-backend/.env.example` for a template.
+
+---
 
 ## Architecture
 
-### Hybrid Data Persistence (Migration in Progress)
+### Backend NestJS Structure (`nestjs-backend/`)
 
-The application is currently in a **hybrid state**, transitioning from localStorage to PostgreSQL:
+**Server (`src/main.ts`):**
+- NestJS application with Swagger, CORS, Helmet, validation
+- Global exception filter
+- Runs on port 3000
+- API prefix: `/api/v1`
 
-**Using Backend API (✅ Complete):**
-- Authentication (login, logout, session management)
-- Empresas (companies) - full CRUD
-- Funcionarios (employees) - full CRUD
+**Modules (`src/modules/`):**
+- `auth/` - Authentication (login, logout, refresh, JWT)
+- `user/` - User management (CRUD)
+- `company/` - Company management (CRUD + delinquency)
+- `worker/` - Worker/Employee management (CRUD + CPF search)
+- `job/` - Job positions (CRUD + CBO codes)
+- `employment/` - Employment relationships (CRUD + termination)
+- `procedure/` - Medical procedures catalog
+- `appointment/` - Appointments and waiting room
+- `document/` - Document management (ASO, PCMSO)
+- `file/` - File upload/download
+- `clinic-unit/` - Clinic units management
+- `room/` - Room management
 
-**Still Using localStorage (⚠️ Pending migration):**
-- ExameRealizado (medical exam records)
-- DocumentoEmpresa (company documents)
-- PCMSO configuration (cargos, ambientes, riscos, protocolos)
-- Financial module (catálogo de serviços, cobranças, NFe)
+**Database (`prisma/schema.prisma`):**
+- 13 models with full relationships
+- Soft deletes with `deletedAt`
+- CUID primary keys (strings)
+- Timestamps (`createdAt`, `updatedAt`)
+- Seed script with test data
 
-**Data Flow:**
-1. Frontend calls `services/apiService.ts` for API operations
-2. API service wraps `backend/src/` Express endpoints
-3. Backend uses Prisma ORM to interact with PostgreSQL
-4. For non-migrated features, frontend falls back to `services/dbService.ts` (localStorage)
-
-### Backend Structure (`backend/`)
-
-**Server (`src/server.ts`):**
-- Express app with CORS, Helmet, error handling
-- Runs on port 3001
-- Graceful shutdown support
-
-**Routes (`src/routes/`):**
-- `auth.routes.ts` - Authentication (login, logout, me)
-- `empresa.routes.ts` - Company CRUD
-- `funcionario.routes.ts` - Employee CRUD
-- `exame.routes.ts` - Exam records
-- `documento.routes.ts` - Documents
-- `pasta.routes.ts` - Folder hierarchy
-- `documentoTipo.routes.ts` - Document types
-- `catalogoServico.routes.ts` - Service catalog
-- `servicoPrestado.routes.ts` - Rendered services
-- `cobranca.routes.ts` - Billing
-- `nfe.routes.ts` - Tax invoices
-- `configuracaoNFSe.routes.ts` - NFS-e configuration
-
-**Controllers (`src/controllers/`):**
-- Handle request/response logic
-- Call Prisma for database operations
-- Return standardized JSON responses
-
-**Middleware (`src/middleware/`):**
-- `auth.ts` - JWT authentication and role-based authorization
-- `errorHandler.ts` - Centralized error handling
-
-**Services (`src/services/nfse/`):**
-- `ipmWebserviceClient.ts` - SOAP client for IPM/AtendeNet
-- `ipmXmlGenerator.ts` - Generates XML for NFS-e emission
-- `ipmXmlParser.ts` - Parses XML responses
-- `types.ts` - NFS-e type definitions
-
-**Database (`src/config/database.ts` + `prisma/`):**
-- Prisma client configuration
-- Schema with 18 tables
-- Soft deletes on all main tables
-- Seed script creates admin user and default document types
+**Swagger Documentation:**
+- URL: `http://localhost:3000/api/docs`
+- Interactive API testing
+- Auto-generated from decorators
 
 ### Frontend Structure
 
 **API Service Layer (`services/apiService.ts`):**
-- Wrapper around backend REST API
+- Wrapper around backend NestJS REST API
 - Uses native fetch (no axios)
-- JWT token management via sessionStorage
+- JWT token management via sessionStorage (accessToken + refreshToken)
 - Exports: `authApi`, `empresaApi`, `funcionarioApi`
 - Error handling with typed `ApiError` class
+- **Mudanças principais da migração:**
+  - Login: `username` → `email`
+  - Token: `token` → `accessToken` + `refreshToken`
+  - IDs: `number` → `string` (CUID)
+  - Endpoints: `/empresas` → `/companies`, `/funcionarios` → `/workers`
+
+**Type System (`types.ts` + `services/apiService.ts`):**
+All TypeScript interfaces are defined in these files. Key types:
+
+**Core Entities (NestJS format):**
+- `User`: System users with email-based auth and expanded roles
+- `Empresa` (Company): Companies with `corporateName`, `tradeName`, `isDelinquent`
+- `Funcionario` (Worker): Employees with `name`, `cpf`, `birthDate`, `gender`
+
+**Mapping Module (New - NestJS Backend):**
+The system now includes a complete occupational risk mapping module with 31 endpoints:
+
+**Risk Categories** (`/api/v1/mapping/risk-categories` - 5 endpoints):
+- Color-coded risk categorization (Physical, Chemical, Biological, Ergonomic, Accident)
+- CRUD operations for risk categories
+- Icon and color customization
+
+**Risks** (`/api/v1/mapping/risks` - 5 endpoints):
+- Individual occupational risks with Brazilian codes (e.g., "01.01.001")
+- Type classification (PHYSICAL, CHEMICAL, BIOLOGICAL, ERGONOMIC, ACCIDENT)
+- Intensity support (LOW, MEDIUM, HIGH, VERY_HIGH)
+- Filtering by type, category, active status
+- Soft delete functionality
+
+**Environments** (`/api/v1/mapping/environments` - 8 endpoints):
+- Work environments (GHE - Grupo Homogêneo de Exposição)
+- Location types (EMPLOYER_ESTABLISHMENT, THIRD_PARTY_ESTABLISHMENT, MOBILE)
+- eSocial integration fields (previousESocialCode, validityStart/End)
+- Add/remove risks to/from environments with intensity levels
+- Company-specific unique names
+
+**Job Mapping** (`/api/v1/mapping/jobs` - 13 endpoints):
+- Complete job-environment-risk mapping
+- Main environment assignment for jobs
+- Multiple environments per job
+- Risk assignment with intensity and notes
+- Exam protocols by job and exam type
+- Job notes (function description, risk analysis, emergency procedures)
+- Soft delete with active flag
+
+**Key Features:**
+- Unique constraints (companyId_name for environments, jobId_riskId for job risks)
+- eSocial validation (requires code and validity when registered)
+- Nested includes (risks with categories, environments with risks)
+- Business logic validation (environment ownership, no duplicates)
+- Seeded with realistic Brazilian occupational health data
 
 **Legacy Data Layer (`services/dbService.ts`):**
 - localStorage-based persistence (legacy)
-- Still used for non-migrated entities
-- Exports CRUD services for all types
-- Includes migration utilities and data validation
-
-**Type System (`types.ts`):**
-All TypeScript interfaces are centralized in `types.ts`. Key types:
-
-**Core Entities:**
-- `Empresa`: Companies with matriz/filial relationships, PCMSO config, and billing settings
-- `Funcionario`: Employees linked to companies via `empresaId`
-- `ExameRealizado`: Medical exam records for employees
-- `DocumentoEmpresa`: Company documents (contracts, ASOs, PCMSO, etc.) with expiration tracking and signature workflow
-- `User`: System users with role-based access (admin/user)
-
-**PCMSO Management:**
-- `Cargo`: Job roles with CBO codes
-- `Ambiente`: Work environments (GHE)
-- `Risco`: Occupational risks (physical, chemical, biological, ergonomic, accidents)
-- `MasterExame`: Catalog of medical exams
-- `ProtocoloExame`: Links exams to job roles for different exam types (admissional, periodic, etc.)
-- `PeriodicidadeCargo`: Defines exam periodicity for each job role
-
-**Financial Module:**
-- `CatalogoServico`: Service catalog with pricing
-- `ServicoPrestado`: Rendered services linked to companies/employees
-- `Cobranca`: Billing records
-- `NFe`: Tax invoices (Nota Fiscal Eletrônica)
-
-**Document Management:**
-- `Pasta`: Folder hierarchy for organizing documents
-- `DocumentoTipo`: Document type definitions with default validity periods
-- `DocumentoStatus`: 'ATIVO' | 'VENCENDO' | 'VENCIDO' | 'ENCERRADO'
-- `SignatureStatus`: 'Nao Requer' | 'Pendente' | 'Assinado' | 'Rejeitado'
+- Still used for non-migrated entities (exames, documentos, PCMSO financial data)
+- Will be gradually migrated to NestJS
 
 ### Component Structure
-
-The application follows a view-based architecture:
 
 **Main App State (`App.tsx`):**
 - Manages all modal states and data reloading
 - Handles authentication/session state via `authApi`
-- Calls `reloadData()` to fetch empresas and funcionarios from backend API
-- Filters data based on selected company (matriz + filiais)
-- Generates notifications for duplicates and pending signatures
+- Calls `reloadData()` to fetch empresas and funcionarios from NestJS backend
 - Routes between views: dashboard, empresas, funcionarios, financeiro, pcmso, relatorios, configuracoes
 
-**Views:**
-- `Dashboard`: Overview with stats cards and alerts
-- `EmpresasTab`: Multi-company management with folder-based document organization
-- `FuncionariosTab` / `DesativadosTab` / `ValidacaoTab`: Employee management with three sub-tabs
-- `FinanceiroGeralTab`: Financial module for services, billing, and invoicing
-- `PcmsoTab`: PCMSO configuration (jobs, risks, environments, exam protocols)
-- `RelatoriosTab`: Report generation
-- `ConfiguracoesGeraisTab`: System configuration
+**Authentication (`components/auth/LoginPage.tsx`):**
+- **Email-based login** (changed from username)
+- Credentials: `admin@ocupalli.com.br` / `admin123`
+- JWT tokens stored in sessionStorage
 
-**Modals:** All user interactions happen through modals located in `components/modals/`. Key patterns:
-- Manager modals handle creation/editing (e.g., `EmpresaManagerModal`, `DocumentoManagerModal`)
-- Modals for empresas and funcionarios use `apiService` for backend persistence
-- Other modals still use `dbService` for localStorage
-- The app uses `initialName` props to pre-populate modals when creating related entities on-the-fly
-- All modals call `onSaveSuccess` / `onDataChange` callbacks to trigger data reload
+**Modals:** All user interactions happen through modals located in `components/modals/`:
+- Modals for empresas and funcionarios use `apiService` for NestJS backend
+- Other modals still use `dbService` for localStorage (pending migration)
 
-**Common Components:**
-- `Header`: Company selector, notifications, user menu
-- `Sidebar`: Navigation between views
-- `SearchableSelect`: Reusable searchable dropdown component
-
-### Gemini AI Integration (`src/services/geminiService.ts`)
-
-The app integrates Google's Gemini AI (using `gemini-1.5-flash` model) for:
-- `summarizeText(text)`: Summarizes text for occupational medicine context
-- `suggestExams(employee)`: Suggests medical exams based on employee job role and risks
-
-**Implementation Details:**
-- Uses `@google/generative-ai` package
-- Model instance is cached after first initialization
-- API key loaded from `import.meta.env.VITE_GEMINI_API_KEY`
-- `useGemini` hook (`src/hooks/useGemini.ts`) provides React integration
-
-**Error Handling:** All Gemini functions throw `GeminiError` objects with a `message` property. The app checks for API key presence via `assertApiKey()` before making requests.
+---
 
 ## Authentication
 
-**Backend JWT Authentication:**
+**Backend JWT Authentication (NestJS):**
+- Email + password login
 - Passwords hashed with bcrypt (10 salt rounds)
-- JWT tokens issued on login (7 day expiration by default)
+- JWT access tokens (15min expiration)
+- Refresh tokens (7 day expiration)
 - Tokens stored in sessionStorage on frontend
-- Middleware validates JWT and checks user role for protected routes
-- Default credentials (seeded by `prisma:seed`):
-  - Admin: `admin` / `admin`
-  - User: `joao.medico` / `123`
+- Middleware validates JWT and checks user role
+- Default credentials (seeded):
+  - Admin: `admin@ocupalli.com.br` / `admin123` (ADMIN)
+  - Doctor: `joao.silva@ocupalli.com.br` / `doctor123` (DOCTOR)
+  - Receptionist: `maria.recepcao@ocupalli.com.br` / `recepcao123` (RECEPTIONIST)
+  - Technician: `carlos.tecnico@ocupalli.com.br` / `tecnico123` (TECHNICIAN)
 
 **Frontend Session:**
 - Managed by `authApi` in `apiService.ts`
-- Session token stored in sessionStorage (key: `token`)
-- `getCurrentUser()` fetches current user from `/api/auth/me`
-- `logout()` clears token and calls backend logout endpoint
+- Session tokens stored in sessionStorage (keys: `accessToken`, `refreshToken`)
+- `getCurrentUser()` fetches current user from `/api/v1/auth/me`
+- `logout()` clears tokens and calls backend logout endpoint
+- `refresh()` renews access token using refresh token
+
+---
 
 ## Important Conventions
 
-1. **API vs localStorage:** When working with empresas or funcionarios, ALWAYS use `apiService` methods (e.g., `empresaApi.create()`, not `empresaService.add()`). For other entities not yet migrated, use `dbService`.
+1. **API Backend:** ALWAYS use NestJS backend (`http://localhost:3000/api/v1`). The Express backend is deprecated.
 
-2. **Company Filtering:** Many views filter data by `selectedEmpresaId`. When a matriz is selected, data includes both the matriz and all its filiais via `getCompanyIdsForFilter()`.
+2. **API vs localStorage:** When working with empresas or funcionarios, ALWAYS use `apiService` methods (e.g., `empresaApi.create()`, not `empresaService.add()`). For other entities not yet migrated, use `dbService`.
 
-3. **Modal Pattern:** Opening modals for quick-add scenarios:
-   - Parent modal can call `onOpenEmpresaManager("Company Name")` to create a company on-the-fly
-   - The new modal receives `initialName` prop and pre-populates the name field
-   - After save, control returns to parent modal with `reloadData()` called
+3. **Authentication:** Use **email** instead of username. All login forms should request email.
 
-4. **Document Status Updates:** The app calls `updateAllDocumentStatuses()` on init (localStorage only), which acts as a cron job to update document statuses based on current date vs. expiration dates.
+4. **IDs:** All IDs are strings (CUID), not numbers. When filtering or comparing IDs, use string equality.
 
-5. **Notification System:** Notifications are generated dynamically in `App.tsx` based on:
-   - Duplicate employees detected
-   - Pending document signatures for current user
+5. **Field Names:** Use camelCase English names from NestJS:
+   - `name` (not `nome`)
+   - `corporateName` (not `razaoSocial`)
+   - `tradeName` (not `nomeFantasia`)
+   - `companyId` (not `empresaId`)
+   - `active` (not `ativo`)
 
-6. **Confirmation Modal:** Destructive actions (deactivate, delete, reactivate) use `ConfirmationModal` with customizable messages and confirmation text requirements.
+6. **HTTP Methods:** NestJS uses `PATCH` for updates (not `PUT`).
 
-7. **Data Reload Pattern:** After any data modification, call `reloadData()` to refresh state. This is now async and fetches empresas and funcionarios from the backend API via `Promise.all()`.
+7. **Error Handling:** The `apiService` throws `ApiError` objects with `message` and optional `statusCode`. Components should catch these and display user-friendly messages.
 
-8. **Error Handling:** The `apiService` throws `ApiError` objects with `message` and optional `statusCode`. Components should catch these and display user-friendly messages (currently using `alert()`, but `react-hot-toast` is installed for future migration).
+---
 
-## Path Aliases
+## Database Schema (NestJS)
 
-The app uses `@/` as an alias for the project root:
-```typescript
-import { dbService } from '@/services/dbService';
-import { empresaApi } from '@/services/apiService';
-```
-
-## Database Schema
-
-The Prisma schema defines 18 tables including:
+The Prisma schema defines 13 models including:
 
 **Core Tables:**
-- `users` - System users with role-based access
-- `empresas` - Companies with matriz/filial relationships
-- `funcionarios` - Employees linked to companies
-- `exames_realizados` - Medical exam records
+- `users` - System users with role-based access (email-based auth)
+- `companies` - Companies with CNPJ, delinquency tracking
+- `workers` - Employees with CPF, birth date, gender
+- `jobs` - Job positions with CBO codes
+- `employments` - Employment relationships (worker + company + job)
 
-**Document Management:**
-- `pastas` - Folder hierarchy
-- `documento_tipos` - Document type definitions
-- `documentos_empresa` - Company documents with expiration and signatures
+**Medical:**
+- `procedures` - Medical procedures catalog
+- `appointments` - Appointments with status (WAITING, IN_SERVICE, etc.)
+- `documents` - Medical documents (ASO, PCMSO) with finalization workflow
 
-**PCMSO:**
-- `cargos` - Job roles
-- `ambientes` - Work environments
-- `riscos` - Occupational risks
-- `master_exames` - Exam catalog
-- `protocolos_exame` - Exam protocols by job role
-- `periodicidade_cargos` - Exam periodicity rules
+**Infrastructure:**
+- `clinic_units` - Clinic locations
+- `rooms` - Rooms within clinics
+- `files` - File uploads
+- `refresh_tokens` - JWT refresh tokens
 
-**Financial:**
-- `catalogo_servicos` - Service catalog
-- `servicos_prestados` - Rendered services
-- `cobrancas` - Billing records
-- `nfes` - Tax invoices
+All tables include timestamps (`createdAt`, `updatedAt`) and use CUID for IDs.
 
-All tables include soft delete (`deletedAt`) and timestamps (`createdAt`, `updatedAt`).
+---
+
+## Migration Status
+
+**✅ Migrated to NestJS (100% functional):**
+- Authentication (login, logout, refresh, me)
+- Companies (CRUD + delinquency management)
+- Workers (CRUD + CPF search + reactivation)
+
+**⚠️ Pending Migration (still using localStorage):**
+- Exames (medical exams)
+- Documentos (documents)
+- PCMSO configuration (cargos, ambientes, riscos, protocolos)
+- Financial module (catálogo de serviços, cobranças, NFe)
+
+**Stub APIs:** The `apiService.ts` includes stub implementations for non-migrated modules that return empty arrays or throw "API não migrada" errors. This ensures compatibility while modules are gradually migrated.
+
+---
 
 ## Brazilian Context
 
@@ -360,40 +368,69 @@ This application is designed for Brazilian occupational health regulations:
 - GHE (Grupo Homogêneo de Exposição) for work environments
 - ASO (Atestado de Saúde Ocupacional) - occupational health certificates
 - PCMSO (Programa de Controle Médico de Saúde Ocupacional) - mandatory health program
-- PGR (Programa de Gerenciamento de Riscos) - risk management program
-- NFe (Nota Fiscal Eletrônica) - electronic tax invoice via IPM/AtendeNet webservice
-- LC 116 service codes and ISS (Imposto Sobre Serviços) tax rates
+- CPF validation and formatting
+- CNPJ validation for companies
 
 All UI text and error messages are in Portuguese (Brazil).
 
-## Migration Status
+---
 
-**What's Completed (90%):**
-- ✅ Backend API fully functional
-- ✅ PostgreSQL database with 18 tables
-- ✅ Authentication integrated (JWT + bcrypt)
-- ✅ Empresas CRUD via API
-- ✅ Funcionarios CRUD via API
-- ✅ Frontend loads empresas and funcionarios from API
+## Path Aliases
 
-**What's Pending (10%):**
-- ⚠️ Exames still use localStorage
-- ⚠️ Documents still use localStorage
-- ⚠️ PCMSO configuration still uses localStorage
-- ⚠️ Financial module still uses localStorage
-- ⚠️ Replace `alert()` with `react-hot-toast` notifications
-- ⚠️ Add loading spinners (state exists but no UI)
+The app uses `@/` as an alias for the project root:
+```typescript
+import { authApi } from '@/services/apiService';
+```
 
-See `STATUS-ATUAL.md` for detailed current status and `CHECKLIST-IMPLEMENTACAO.md` for complete task list.
+---
 
-## Session Documentation
+## Testing
 
-The project has detailed session logs documenting the implementation:
-- `SESSAO-01-IMPLEMENTADO.md` - Backend initial implementation
-- `SESSAO-02-TESTES-E-CORRECOES.md` - Tests and corrections
-- `SESSAO-03-INTEGRACAO-API.md` - API service creation
-- `SESSAO-04-INTEGRACAO-COMPONENTES.md` - Component integration with API
-- `SESSAO-05-CARREGAMENTO-API.md` - Data loading refactor
-- `SESSAO-06-*.md` - Employee modal integration
+### Manual Testing via Swagger
+Access `http://localhost:3000/api/docs` for interactive API testing.
 
-Always check `STATUS-ATUAL.md` first for the current state of the system.
+### cURL Examples
+```bash
+# Login
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@ocupalli.com.br","password":"admin123"}'
+
+# List companies (requires token)
+curl http://localhost:3000/api/v1/companies \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+---
+
+## Documentation Files
+
+- **MIGRACAO-NESTJS.md** - Complete migration guide (Express → NestJS)
+- **STATUS-ATUAL.md** - Current project status
+- **nestjs-backend/SESSAO-ATUAL-RESUMO.md** - NestJS backend session summary
+- **nestjs-backend/README.md** - NestJS backend documentation
+
+---
+
+## Troubleshooting
+
+### Frontend can't connect to backend
+- ✅ Verify NestJS backend is running on port 3000: `cd nestjs-backend && npm run dev`
+- ✅ Check `.env.local` has `VITE_API_BASE_URL=http://localhost:3000/api/v1`
+- ✅ Verify CORS is configured for frontend port (3002) in `nestjs-backend/.env`
+
+### Login fails with "Credenciais inválidas"
+- ✅ Use **email** format: `admin@ocupalli.com.br` (not `admin`)
+- ✅ Correct password: `admin123`
+- ✅ Verify database was seeded: `cd nestjs-backend && npm run prisma:seed`
+
+### TypeScript errors about IDs
+- ✅ IDs are now `string` (CUID), not `number`
+- ✅ Update any comparisons: `id === '123'` not `id === 123`
+
+---
+
+**Last Updated:** 30/11/2025
+**Backend:** NestJS (port 3000)
+**Frontend:** React + Vite (port 3002/3003)
+**Status:** ✅ Migration to NestJS completed

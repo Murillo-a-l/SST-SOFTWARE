@@ -1,0 +1,267 @@
+// ============= MÓDULO DE EXAMES E PCMSO =============
+// Sistema completo de gestão de exames ocupacionais e PCMSO versionado
+
+// ========== ENUMS ==========
+
+enum ExamCategory {
+  CLINICAL              // Exame clínico
+  LABORATORY            // Exames laboratoriais
+  IMAGING               // Exames de imagem
+  COMPLEMENTARY         // Exames complementares
+  PSYCHOSOCIAL          // Avaliação psicossocial
+  FUNCTIONAL            // Testes funcionais
+  OTHER                 // Outros
+}
+
+enum PeriodicityType {
+  NONE                  // Sem periodicidade
+  ON_ADMISSION          // Admissional
+  ON_DISMISSAL          // Demissional
+  ON_RETURN             // Retorno ao trabalho
+  ON_CHANGE             // Mudança de risco
+  PERIODIC              // Periódico
+  CUSTOM                // Regra customizada
+}
+
+enum ExamSourceType {
+  RISK                  // Originado de risco
+  JOB                   // Originado de cargo
+  MANUAL                // Adicionado manualmente
+  AI_SUGGESTION         // Sugestão da IA
+  NR7_REQUIREMENT       // Exigência NR-7
+}
+
+enum PCMSOStatus {
+  DRAFT                 // Rascunho (editável)
+  UNDER_REVIEW          // Em revisão
+  SIGNED                // Assinado (imutável)
+  ARCHIVED              // Arquivado
+  OUTDATED              // Desatualizado
+}
+
+// ========== EXAMES ==========
+
+model Examination {
+  id                String         @id @default(cuid())
+  name              String         @unique
+  description       String?        @db.Text
+  category          ExamCategory
+  table27Codes      String[]       @map("table_27_codes") // Códigos da tabela 27 eSocial
+  insertIntoASO     Boolean        @default(true) @map("insert_into_aso")
+  requiresJustification Boolean    @default(false) @map("requires_justification")
+  active            Boolean        @default(true)
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  riskExamRules         ExamRuleByRisk[]
+  jobExamRules          ExamRuleByJob[]
+  pcmsoExamRequirements PCMSOExamRequirement[]
+
+  @@index([active])
+  @@index([category])
+  @@map("examinations")
+}
+
+// ========== REGRAS DE EXAMES POR RISCO ==========
+
+model ExamRuleByRisk {
+  id                      String          @id @default(cuid())
+  riskId                  String          @map("risk_id")
+  examId                  String          @map("exam_id")
+
+  // Periodicidade
+  periodicityType         PeriodicityType @map("periodicity_type")
+  periodicityValue        Int?            @map("periodicity_value") // Meses
+  periodicityAdvancedRule Json?           @map("periodicity_advanced_rule") // Regras complexas
+
+  // Aplicabilidade
+  applicableOnAdmission   Boolean         @default(false) @map("applicable_on_admission")
+  applicableOnDismissal   Boolean         @default(false) @map("applicable_on_dismissal")
+  applicableOnReturn      Boolean         @default(false) @map("applicable_on_return")
+  applicableOnChange      Boolean         @default(false) @map("applicable_on_change")
+  applicablePeriodic      Boolean         @default(false) @map("applicable_periodic")
+
+  justification           String?         @db.Text
+  aiRecommendation        String?         @map("ai_recommendation") @db.Text
+  notes                   String?         @db.Text
+  active                  Boolean         @default(true)
+  createdAt               DateTime        @default(now()) @map("created_at")
+  updatedAt               DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  risk         Risk        @relation(fields: [riskId], references: [id], onDelete: Cascade)
+  examination  Examination @relation(fields: [examId], references: [id], onDelete: Restrict)
+
+  @@unique([riskId, examId])
+  @@index([riskId])
+  @@index([examId])
+  @@index([active])
+  @@map("exam_rules_by_risk")
+}
+
+// ========== REGRAS DE EXAMES POR CARGO ==========
+
+model ExamRuleByJob {
+  id                      String          @id @default(cuid())
+  jobId                   String          @map("job_id")
+  examId                  String          @map("exam_id")
+
+  // Periodicidade
+  periodicityType         PeriodicityType @map("periodicity_type")
+  periodicityValue        Int?            @map("periodicity_value") // Meses
+  periodicityAdvancedRule Json?           @map("periodicity_advanced_rule")
+
+  // Aplicabilidade
+  applicableOnAdmission   Boolean         @default(false) @map("applicable_on_admission")
+  applicableOnDismissal   Boolean         @default(false) @map("applicable_on_dismissal")
+  applicableOnReturn      Boolean         @default(false) @map("applicable_on_return")
+  applicableOnChange      Boolean         @default(false) @map("applicable_on_change")
+  applicablePeriodic      Boolean         @default(false) @map("applicable_periodic")
+
+  // Controles
+  overrideRiskRules       Boolean         @default(false) @map("override_risk_rules") // Sobrescreve regras de risco
+  insertIntoASO           Boolean         @default(true) @map("insert_into_aso")
+
+  justification           String?         @db.Text
+  aiRecommendation        String?         @map("ai_recommendation") @db.Text
+  notes                   String?         @db.Text
+  active                  Boolean         @default(true)
+  createdAt               DateTime        @default(now()) @map("created_at")
+  updatedAt               DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  job          Job         @relation("JobExamRules", fields: [jobId], references: [id], onDelete: Cascade)
+  examination  Examination @relation(fields: [examId], references: [id], onDelete: Restrict)
+
+  @@unique([jobId, examId])
+  @@index([jobId])
+  @@index([examId])
+  @@index([active])
+  @@map("exam_rules_by_job")
+}
+
+// ========== VERSÕES DO PCMSO ==========
+
+model PCMSOVersion {
+  id                      String       @id @default(cuid())
+  companyId               String       @map("company_id")
+  versionNumber           Int          @map("version_number")
+  status                  PCMSOStatus
+
+  // Metadados
+  title                   String?
+  contentHtml             String?      @map("content_html") @db.Text
+
+  // IA e Geração
+  generatedByAI           Boolean      @default(false) @map("generated_by_ai")
+  aiModel                 String?      @map("ai_model")
+
+  // Assinatura e Auditoria
+  generatedAt             DateTime     @default(now()) @map("generated_at")
+  signedAt                DateTime?    @map("signed_at")
+  signedByUserId          String?      @map("signed_by_user_id")
+  signatureHash           String?      @map("signature_hash") // SHA256 para integridade
+
+  // Controle de Mudanças
+  diffFromPrevious        Json?        @map("diff_from_previous") // Diff estruturado
+  changesSummary          String?      @map("changes_summary") @db.Text
+  mappingChangedAfterSign Boolean      @default(false) @map("mapping_changed_after_sign")
+
+  notes                   String?      @db.Text
+  createdAt               DateTime     @default(now()) @map("created_at")
+  updatedAt               DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  company              Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  signedByUser         User?                  @relation("PCMSOSignedByUser", fields: [signedByUserId], references: [id])
+  examRequirements     PCMSOExamRequirement[]
+  editHistory          PCMSOEditHistory[]
+
+  @@unique([companyId, versionNumber])
+  @@index([companyId])
+  @@index([status])
+  @@index([versionNumber])
+  @@map("pcmso_versions")
+}
+
+// ========== EXAMES CONSOLIDADOS NO PCMSO ==========
+
+model PCMSOExamRequirement {
+  id                      String          @id @default(cuid())
+  pcmsoVersionId          String          @map("pcmso_version_id")
+  examId                  String          @map("exam_id")
+
+  // Origem
+  source                  ExamSourceType
+  sourceRiskId            String?         @map("source_risk_id")
+  sourceJobId             String?         @map("source_job_id")
+
+  // Periodicidade Consolidada
+  periodicityType         PeriodicityType @map("periodicity_type")
+  periodicityValue        Int?            @map("periodicity_value")
+  periodicityAdvancedRule Json?           @map("periodicity_advanced_rule")
+
+  // Aplicabilidade
+  applicableOnAdmission   Boolean         @default(false) @map("applicable_on_admission")
+  applicableOnDismissal   Boolean         @default(false) @map("applicable_on_dismissal")
+  applicableOnReturn      Boolean         @default(false) @map("applicable_on_return")
+  applicableOnChange      Boolean         @default(false) @map("applicable_on_change")
+  applicablePeriodic      Boolean         @default(false) @map("applicable_periodic")
+
+  justification           String?         @db.Text
+  notes                   String?         @db.Text
+  createdAt               DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  pcmsoVersion PCMSOVersion @relation(fields: [pcmsoVersionId], references: [id], onDelete: Cascade)
+  examination  Examination  @relation(fields: [examId], references: [id], onDelete: Restrict)
+
+  @@index([pcmsoVersionId])
+  @@index([examId])
+  @@index([source])
+  @@map("pcmso_exam_requirements")
+}
+
+// ========== HISTÓRICO DE EDIÇÕES DO PCMSO (Auditoria) ==========
+
+model PCMSOEditHistory {
+  id             String       @id @default(cuid())
+  pcmsoVersionId String       @map("pcmso_version_id")
+  userId         String       @map("user_id")
+
+  action         String       // "CREATE", "EDIT_CONTENT", "ADD_EXAM", "REMOVE_EXAM", "SIGN", "ARCHIVE"
+  fieldChanged   String?      @map("field_changed")
+  oldValue       String?      @map("old_value") @db.Text
+  newValue       String?      @map("new_value") @db.Text
+
+  changeContext  Json?        @map("change_context") // Contexto adicional
+  ipAddress      String?      @map("ip_address")
+  userAgent      String?      @map("user_agent")
+
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  pcmsoVersion PCMSOVersion @relation(fields: [pcmsoVersionId], references: [id], onDelete: Cascade)
+  user         User         @relation("PCMSOEditHistoryUser", fields: [userId], references: [id])
+
+  @@index([pcmsoVersionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("pcmso_edit_history")
+}
+
+// ========== ATUALIZAÇÕES EM MODELOS EXISTENTES ==========
+
+// Adicionar no modelo User:
+// signedPCMSOVersions PCMSOVersion[] @relation("PCMSOSignedByUser")
+// pcmsoEditHistory    PCMSOEditHistory[] @relation("PCMSOEditHistoryUser")
+
+// Adicionar no modelo Company:
+// pcmsoVersions PCMSOVersion[]
+
+// Adicionar no modelo Job:
+// examRulesByJob ExamRuleByJob[] @relation("JobExamRules")
+
+// Adicionar no modelo Risk:
+// examRulesByRisk ExamRuleByRisk[]

@@ -13,7 +13,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -22,13 +22,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
 
     try {
-      const { user } = await authApi.login(username, password);
-      toast.success(`Bem-vindo, ${user.nome}!`);
+      const { user } = await authApi.login(email, password);
+      toast.success(`Bem-vindo, ${user.name}!`);
       onLoginSuccess(user);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.statusCode === 401) {
-          toast.error('Usuário ou senha inválidos.');
+          toast.error('Email ou senha inválidos.');
         } else if (err.statusCode === 500) {
           toast.error('Erro no servidor. Tente novamente mais tarde.');
         } else {
@@ -113,17 +113,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <form className="relative mt-8 space-y-6" onSubmit={handleLogin}>
               <div className="space-y-4">
                 <div className="text-left">
-                  <label htmlFor="username" className="block text-sm font-semibold text-[#1F2A3D]">Nome de Usuário</label>
-                  <p className="text-xs text-[#6B7A92]">Mantenha as mesmas credenciais, agora com um toque retrô-chique.</p>
+                  <label htmlFor="email" className="block text-sm font-semibold text-[#1F2A3D]">Email</label>
+                  <p className="text-xs text-[#6B7A92]">Use seu email corporativo para acessar o sistema.</p>
                   <Input
-                    id="username"
-                    name="username"
-                    type="text"
+                    id="email"
+                    name="email"
+                    type="email"
                     required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="mt-2"
-                    placeholder="ex: admin"
+                    placeholder="ex: admin@ocupalli.com.br"
                   />
                 </div>
                 <div className="text-left">
@@ -151,7 +151,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   {isLoading ? 'Entrando...' : 'Entrar no painel'}
                 </Button>
                 <p className="text-xs text-center text-[#6B7A92]">
-                  Use <span className="font-mono">admin</span> / <span className="font-mono">admin</span> para o primeiro acesso.
+                  Use <span className="font-mono">admin@ocupalli.com.br</span> / <span className="font-mono">admin123</span> para o primeiro acesso.
                 </p>
               </div>
             </form>
